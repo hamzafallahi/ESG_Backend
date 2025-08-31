@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    command:
+      [ "sh", "-c", "npx sequelize-cli db:migrate --config ./config/config.json --env local && npm start" ]
+
+    env_file:
+      - ./env/.env.local
+    container_name: esg-backend-service
+    ports:
+      - "8082:8082"
+    working_dir: /var/www
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+      - /var/www/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - postgres
+  
+
+
+  redis:
+    image: redis:latest
+    container_name: redis-ESG
+    restart: always
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - postgres
+    
+  redis_insight:
+    image: redis/redisinsight:2.68.0
+    container_name: redis_insight-ESG
+    restart: always
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/db
+    networks:
+      - postgres
+    
+
+
+  postgres:
+    container_name: esg_postgres_container
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-TAA-db}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: esg_pgadmin_container
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
+  redis_data:
+  redis_insight_data:

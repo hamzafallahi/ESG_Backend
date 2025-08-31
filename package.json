@@ -1,0 +1,56 @@
+{
+  "name": "esg_backend",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/hamzafallahi/ESG_Backend#readme",
+  "bugs": {
+    "url": "https://github.com/hamzafallahi/ESG_Backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hamzafallahi/ESG_Backend.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run docs && nodemon --legacy-watch index.js",
+    "start-local": "node index.js",
+    "lint": "eslint --ignore-path .gitignore .",
+    "prod": "node index.prod.js",
+    "lint-fix": "eslint --ignore-path .gitignore --fix .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "apidoc -i ./ -e node_modules/ -t ./node_modules/apidoc-contenttype-plugin/template/ --parse-parsers apicontenttype=./node_modules/apidoc-contenttype-plugin/api_content_type.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.9",
+    "axios": "^1.11.0",
+    "body-parser": "^2.2.0",
+    "cache-manager": "^7.2.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.2.1",
+    "express": "^4.21.2",
+    "express-async-errors": "^3.1.1",
+    "ioredis": "^5.7.0",
+    "joi": "^18.0.1",
+    "jsonapi-serializer": "^3.6.9",
+    "jsonwebtoken": "^9.0.2",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^7.0.6",
+    "pg": "^8.16.3",
+    "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "apidoc": "^1.2.0",
+    "apidoc-contenttype-plugin": "^0.1.0",
+    "eslint": "^9.34.0",
+    "eslint-plugin-node": "^11.1.0",
+    "nodemon": "^3.1.10"
+  }
+}

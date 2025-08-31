@@ -1,0 +1,20 @@
+const express = require('express');
+const router = express.Router();
+const questionController = require('../controllers/Question.controller');
+const { create, update, getAll }  = require('../validation/Questions.rules.js');
+const QuestionDeserializer = require('../deserializer/questiondeserializer.js');
+const deserializeMiddleware = require('../middleware/deserializeMiddleware');
+const validate = require('../middleware/validationMiddleware');
+//const cacheMiddleware = require('../middleware/cache.middleware');
+
+//router.use(cacheMiddleware);
+
+router.get('/', validate(getAll), questionController.getAllQuestions);
+
+router.post('/', validate(create), deserializeMiddleware(QuestionDeserializer), questionController.createQuestion);
+
+router.put('/:questionId', validate(update), deserializeMiddleware(QuestionDeserializer), questionController.updateQuestion);
+
+router.delete('/:questionId', questionController.deleteQuestion);
+
+module.exports = router;
