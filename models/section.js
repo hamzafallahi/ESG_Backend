@@ -14,17 +14,17 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Section.init({
-    section_id: {
-      type: DataTypes.INTEGER,
+    id: {
+      type: DataTypes.UUID,
       primaryKey: true,
-      autoIncrement: true
+      defaultValue: DataTypes.UUIDV4
     },
     category_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: 'categories',
-        key: 'category_id'
+        key: 'id'
       }
     },
     title: {

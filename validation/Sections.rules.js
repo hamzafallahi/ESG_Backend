@@ -17,7 +17,7 @@ const sectionDataSchema = {
     .keys({
       title: Joi.string().max(255).required(),
       description: Joi.string().max(1000).allow(null),
-      category_id: Joi.number().integer().required(),
+      category_id: Joi.string().uuid().required(),
     })
     .required(),
 };

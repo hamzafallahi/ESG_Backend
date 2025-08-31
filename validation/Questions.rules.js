@@ -17,7 +17,7 @@ const questionDataSchema = {
     .keys({
       text: Joi.string().max(1000).required(),
       score_value: Joi.number().integer().min(0).required(),
-      section_id: Joi.number().integer().required(),
+      section_id: Joi.string().uuid().required(),
     })
     .required(),
 };

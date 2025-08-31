@@ -10,17 +10,17 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Question.init({
-    question_id: {
-      type: DataTypes.INTEGER,
+    id: {
+      type: DataTypes.UUID,
       primaryKey: true,
-      autoIncrement: true
+      defaultValue: DataTypes.UUIDV4
     },
     section_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: 'sections',
-        key: 'section_id'
+        key: 'id'
       }
     },
     text: {
