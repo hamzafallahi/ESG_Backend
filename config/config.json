@@ -1,0 +1,34 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "changeme",
+    "database": "TAA_db",
+    "host": "postgres",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "local": {
+    "username": "postgres",
+    "password": "changeme",
+    "database": "TAA_db",
+    "host": "postgres",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "null",
+    "database": "TAA_db_test",
+    "host": "postgres",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": "null",
+    "database": "TAA_db",
+    "host": "postgres",
+    "port": 5432,
+    "dialect": "postgres"
+  }
+}
