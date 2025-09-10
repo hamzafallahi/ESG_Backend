@@ -2,19 +2,21 @@ const Joi = require("joi");
 
 const ALLOWED_FIELDS = [
   "id",
-  "name", 
+  "name",
+  "name_fr",
   "description",
   "created_at",
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = ["name", "description", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["name", "name_fr", "description", "created_at", "updated_at"];
 
 const categoryDataSchema = {
   type: Joi.string().valid("categories").required(),
   attributes: Joi.object()
     .keys({
       name: Joi.string().max(255).required(),
+      name_fr: Joi.string().max(255).allow(null),
       description: Joi.string().max(1000).allow(null),
     })
     .required(),
@@ -24,6 +26,7 @@ const categoryUpdateDataSchema = {
   type: Joi.string().valid("categories").required(),
   attributes: Joi.object().keys({
     name: Joi.string().max(255),
+    name_fr: Joi.string().max(255).allow(null),
     description: Joi.string().max(1000).allow(null),
   }),
 };
