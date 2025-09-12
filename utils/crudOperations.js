@@ -254,11 +254,12 @@ const createCrudOperations = ({
           distinct: true,
         }),
       ]);
-
+      const totalPages = Math.ceil(total_count / pageSize);
       const meta = {
-        total: total_count,
-        page: pageNumber,
-        per_page: pageSize,
+        page_number: pageNumber,
+        page_size: pageSize,
+        total_count: total_count,
+        total_pages: totalPages,
       };
 
       // Use inline serializer if includes are present and inline serializer is available
