@@ -4,19 +4,23 @@ const ALLOWED_FIELDS = [
   "id",
   "section_id",
   "text", 
+  "text_fr",
   "score_value",
+  "level",
   "created_at",
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = ["text", "score_value", "section_id", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["text", "text_fr", "score_value", "level", "section_id", "created_at", "updated_at"];
 
 const questionDataSchema = {
   type: Joi.string().valid("questions").required(),
   attributes: Joi.object()
     .keys({
       text: Joi.string().max(1000).required(),
+      text_fr: Joi.string().max(1000).allow(null),
       score_value: Joi.number().integer().min(0).required(),
+      level: Joi.number().integer().min(1).required(),
       section_id: Joi.string().uuid().required(),
     })
     .required(),
@@ -26,6 +30,8 @@ const questionUpdateDataSchema = {
   type: Joi.string().valid("questions").required(),
   attributes: Joi.object().keys({
     text: Joi.string().max(1000),
+    text_fr: Joi.string().max(1000).allow(null),
+    level: Joi.number().integer().min(1),
     score_value: Joi.number().integer().min(0),
   }),
 };

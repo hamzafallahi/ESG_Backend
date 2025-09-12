@@ -4,18 +4,20 @@ const ALLOWED_FIELDS = [
   "id",
   "category_id",
   "title", 
+  "title_fr",
   "description",
   "created_at",
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = ["title", "description", "category_id", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["title", "title_fr", "description", "category_id", "created_at", "updated_at"];
 
 const sectionDataSchema = {
   type: Joi.string().valid("sections").required(),
   attributes: Joi.object()
     .keys({
       title: Joi.string().max(255).required(),
+      title_fr: Joi.string().max(255).allow(null),
       description: Joi.string().max(1000).allow(null),
       category_id: Joi.string().uuid().required(),
     })
@@ -26,6 +28,7 @@ const sectionUpdateDataSchema = {
   type: Joi.string().valid("sections").required(),
   attributes: Joi.object().keys({
     title: Joi.string().max(255),
+    title_fr: Joi.string().max(255).allow(null),
     description: Joi.string().max(1000).allow(null),
   }),
 };
