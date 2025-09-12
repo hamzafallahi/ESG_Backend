@@ -63,6 +63,29 @@ exports.getAllCategories = async(req, res, next) =>{
         next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
     }
 }
+exports.getCategoryById = async (req, res, next) => {
+  try {
+    const id = req.params.categoryId;
+    
+    let attributes = req.query.fields ? req.query.fields.split(",") : undefined;
+    
+    const category = await Category.findByPk(id, {
+      attributes
+    });
+    
+    if (!category) {
+      const notFoundError = new BusinessError(404, "Not Found");
+      notFoundError.addError("data", `Category with id ${id} not found`);
+      throw notFoundError;
+    }
+    
+    const serializedData = CategorySerializer.serialize(category);
+    res.status(200).json(serializedData);
+    
+  } catch (error) {
+    next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+  }
+}
 
 exports.createCategory = async (req, res, next) => {
     try {

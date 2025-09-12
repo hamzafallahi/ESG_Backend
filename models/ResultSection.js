@@ -29,7 +29,7 @@ module.exports = (sequelize, type) => {
   });
 
   ResultSection.associate = function(models) {
-    ResultSection.belongsTo(models.results, { foreignKey: 'result_id' });
+    ResultSection.belongsTo(models.results, { foreignKey: 'result_id'  , as: 'results'});
     ResultSection.belongsTo(models.section, { foreignKey: 'section_id' });
   };
 

@@ -1,6 +1,7 @@
 const db = require('../models');
 const ResultSection = db.result_sections;
 const ResultSectionSerializer = require( "../serializer/ResultSection.serializer.js");
+const ResultSectionInlineSerializer = require( "../serializer/ResultSection.inline.serializer.js");
 const { createCrudOperations } = require( "../utils/crudOperations.js");
 const NotFoundError = require( "../error/exception/NotFound.js");
 
@@ -19,9 +20,10 @@ const crudOps = createCrudOperations({
   Model: ResultSection,
   modelName: "ResultSection",
   Serializer: ResultSectionSerializer,
-  allowedIncludes: [],
+  InlineSerializer: ResultSectionInlineSerializer,
+  allowedIncludes: ["section","results"],
   allowedFields,
-  defaultIncludes: [],
+  defaultIncludes: ["section","results"],
 });
 
 // Custom getAll with pagination
@@ -35,15 +37,7 @@ const getAll = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const resultSection = await ResultSection.findByPk(id);
-
-    if (!resultSection) {
-      throw new NotFoundError("ResultSection not found", "ResultSection");
-    }
-
-    let serializedData = ResultSectionSerializer.serialize(resultSection);
-    res.json(serializedData);
+    await crudOps.getById(req, res, next);
   } catch (error) {
     next(error);
   }

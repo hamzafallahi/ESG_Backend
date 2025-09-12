@@ -65,6 +65,30 @@ exports.getAllSections = async(req, res, next) =>{
     }
 }
 
+exports.getSectionById = async (req, res, next) => {
+  try {
+    const id = req.params.sectionId;
+    
+    let attributes = req.query.fields ? req.query.fields.split(",") : undefined;
+    
+    const section = await Section.findByPk(id, {
+      attributes
+    });
+    
+    if (!section) {
+      const notFoundError = new BusinessError(404, "Not Found");
+      notFoundError.addError("data", `Section with id ${id} not found`);
+      throw notFoundError;
+    }
+    
+    const serializedData = SectionSerializer.serialize(section);
+    res.status(200).json(serializedData);
+    
+  } catch (error) {
+    next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+  }
+}
+
 exports.getSectionsByCategory = async(req, res, next) =>{
     try {
         const categoryId = req.params.categoryId;

@@ -23,7 +23,7 @@ const crudOps = createCrudOperations({
   InlineSerializer: ResultInlineSerializer,
   allowedIncludes: ["result_categories", "result_sections"],
   allowedFields,
-  defaultIncludes: [],
+  defaultIncludes: ["result_categories", "result_sections"],
 });
 
 // Custom getAll with pagination
@@ -37,15 +37,7 @@ const getAll = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const result = await Result.findByPk(id);
-
-    if (!result) {
-      throw new NotFoundError("Result not found", "Result");
-    }
-
-    let serializedData = ResultSerializer.serialize(result);
-    res.json(serializedData);
+    await crudOps.getById(req, res, next);
   } catch (error) {
     next(error);
   }

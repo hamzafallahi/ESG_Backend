@@ -8,6 +8,8 @@ const validate = require('../middleware/validationMiddleware');
 
 router.get('/', validate(getAll), questionController.getAllQuestions);
 
+router.get('/:questionId', questionController.getQuestionById);
+
 router.post('/', validate(create), deserializeMiddleware(QuestionDeserializer), questionController.createQuestion);
 
 router.put('/:questionId', validate(update), deserializeMiddleware(QuestionDeserializer), questionController.updateQuestion);

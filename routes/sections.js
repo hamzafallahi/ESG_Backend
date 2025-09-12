@@ -12,6 +12,8 @@ const validate = require('../middleware/validationMiddleware');
 
 router.get('/', validate(getAll), sectionController.getAllSections);
 
+router.get('/:sectionId', sectionController.getSectionById);
+
 router.post('/', validate(create), deserializeMiddleware(SectionDeserializer), sectionController.createSection);
 
 router.put('/:sectionId', validate(update), deserializeMiddleware(SectionDeserializer), sectionController.updateSection);

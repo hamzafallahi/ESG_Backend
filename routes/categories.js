@@ -12,6 +12,8 @@ const validate = require('../middleware/validationMiddleware');
 
 router.get('/', validate(getAll), categoryController.getAllCategories);
 
+router.get('/:categoryId', categoryController.getCategoryById);
+
 router.post('/', validate(create), deserializeMiddleware(CategoryDeserializer), categoryController.createCategory);
 
 router.put('/:categoryId', validate(update), deserializeMiddleware(CategoryDeserializer), categoryController.updateCategory);

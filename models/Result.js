@@ -29,8 +29,8 @@ module.exports = (sequelize, type) => {
 
   Result.associate = function(models) {
     //Result.belongsTo(models.User, { foreignKey: 'user_id' });
-    Result.hasMany(models.result_categories, { foreignKey: 'result_id' });
-    Result.hasMany(models.result_sections, { foreignKey: 'result_id' });
+    Result.hasMany(models.result_categories, { foreignKey: 'result_id' ,    as: 'result_categories'});
+    Result.hasMany(models.result_sections, { foreignKey: 'result_id' ,    as: 'result_sections' });
   };
 
   return Result;

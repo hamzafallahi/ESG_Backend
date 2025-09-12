@@ -63,6 +63,30 @@ exports.getAllQuestions = async(req, res, next) =>{
     }
 }
 
+exports.getQuestionById = async (req, res, next) => {
+  try {
+    const id = req.params.questionId;
+    
+    let attributes = req.query.fields ? req.query.fields.split(",") : undefined;
+    
+    const question = await Question.findByPk(id, {
+      attributes
+    });
+    
+    if (!question) {
+      const notFoundError = new BusinessError(404, "Not Found");
+      notFoundError.addError("data", `Question with id ${id} not found`);
+      throw notFoundError;
+    }
+    
+    const serializedData = QuestionSerializer.serialize(question);
+    res.status(200).json(serializedData);
+    
+  } catch (error) {
+    next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+  }
+}
+
 exports.getQuestionsBySection = async(req, res, next) =>{
     try {
         const sectionId = req.params.sectionId;
