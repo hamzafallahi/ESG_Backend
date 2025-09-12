@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'category_id',
         as: 'sections'
       });
+      Category.hasMany(models.result_categories, {
+        foreignKey: 'category_id',
+        as: 'result_categories'
+      });
     }
   }
   Category.init({

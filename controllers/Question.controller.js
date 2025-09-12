@@ -1,209 +1,118 @@
-const BusinessError = require("../error/BusinessError");
-const TechnicalError = require('../error/TechnicalError');
 const db = require('../models');
 const Question = db.question;
 const Section = db.section;
-
-
 const QuestionSerializer = require('../serializer/questionserializer.js');
+const QuestionInlineSerializer = require('../serializer/Question.inline.serializer.js');
+const { createCrudOperations } = require('../utils/crudOperations.js');
+const NotFoundError = require('../error/exception/NotFound.js');
+const BusinessError = require("../error/BusinessError");
 
-exports.getAllQuestions = async(req, res, next) =>{
-    try {
-        let whereCondition = {};
-        const pageSize = parseInt(req.query["page"]?.["size"]) || 10;
-        const pageNumber = parseInt(req.query["page"]?.["number"]) || 0;
-        const offset = pageNumber * pageSize;
+const allowedFields = [
+  "id",
+  "section_id",
+  "text",
+  "text_fr",
+  "score_value",
+  "level",
+  "created_at",
+  "updated_at",
+  "deleted_at",
+];
 
-       if (req.query.filter) {
-        Object.keys(req.query.filter).forEach((key) => {
-            whereCondition[key] = req.query.filter[key];
-        });
-      }
-      
-      let attributes = req.query.fields ? req.query.fields.split(",") : undefined;
+const crudOps = createCrudOperations({
+  Model: Question,
+  modelName: "Question",
+  Serializer: QuestionSerializer,
+  InlineSerializer: QuestionInlineSerializer,
+  allowedIncludes: ["section"],
+  allowedFields,
+  defaultIncludes: ["section"],
+});
 
-       let order = [];
-        if (req.query.sort) {
-            const sortFields = req.query.sort.split(",");
-            sortFields.forEach((field) => {
-                const sortOrder = field.startsWith("-") ? "DESC" : "ASC";
-                const sortField = field.replace("-", "");
-                order.push([sortField, sortOrder]);
-            });
-        } else {
-            order.push(["created_at", "ASC"]); 
-        }
+// CRUD operations for questions by section (with parent relationship)
+const crudOpsBySection = createCrudOperations({
+  Model: Question,
+  modelName: "Question",
+  Serializer: QuestionSerializer,
+  InlineSerializer: QuestionInlineSerializer,
+  allowedIncludes: ["section"],
+  allowedFields,
+  defaultIncludes: ["section"],
+  parentIdField: "section_id",
+});
 
-      const [items, totalCount] = await Promise.all([
-        Question.findAll({
-          attributes,
-          offset,
-          limit: pageSize,
-          where: whereCondition,
-          order,
-        }),
-        Question.count({ where: whereCondition }),
-      ]);
-      const totalPages = Math.ceil(totalCount / pageSize);
-
-      let serializedData = QuestionSerializer.serialize(items);
-      serializedData.meta = {
-            page: {
-                page_number: pageNumber,
-                page_size: pageSize,
-                total_count: totalCount,
-                total_pages: totalPages
-            }
-        };
-
-      res.status(200).json(serializedData);
-
-    }catch (error) {
-        next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
-    }
-}
-
-exports.getQuestionById = async (req, res, next) => {
+// Custom getAll with pagination
+const getAllQuestions = async (req, res, next) => {
   try {
-    const id = req.params.questionId;
-    
-    let attributes = req.query.fields ? req.query.fields.split(",") : undefined;
-    
-    const question = await Question.findByPk(id, {
-      attributes
-    });
-    
-    if (!question) {
-      const notFoundError = new BusinessError(404, "Not Found");
-      notFoundError.addError("data", `Question with id ${id} not found`);
-      throw notFoundError;
-    }
-    
-    const serializedData = QuestionSerializer.serialize(question);
-    res.status(200).json(serializedData);
-    
+    await crudOps.getAllWithPagination(req, res, next);
   } catch (error) {
-    next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+    next(error);
   }
-}
+};
 
-exports.getQuestionsBySection = async(req, res, next) =>{
-    try {
-        const sectionId = req.params.sectionId;
-        let whereCondition = { section_id: sectionId };
-        const pageSize = parseInt(req.query["page"]?.["size"]) || config.limit;
-        const pageNumber = parseInt(req.query["page"]?.["number"]) || 0;
-        const offset = pageNumber * pageSize;
+const getQuestionById = async (req, res, next) => {
+  try {
+    // Map questionId param to id for crudOps
+    req.params.id = req.params.questionId;
+    await crudOps.getById(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
 
-       if (req.query.filter) {
-        Object.keys(req.query.filter).forEach((key) => {
-            whereCondition[key] = req.query.filter[key];
-        });
-      }
-      
-      let attributes = req.query.fields ? req.query.fields.split(",") : undefined;
+const getQuestionsBySection = async (req, res, next) => {
+  try {
+    // Map sectionId param to section_id for crudOps
+    req.params.section_id = req.params.sectionId;
+    await crudOpsBySection.getAllWithPagination(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+const createQuestion = async (req, res, next) => {
+  try {
+    const { text, score_value, section_id } = req.body;
+    const sectionIdFromRoute = req.params.sectionId;
 
-       let order = [];
-        if (req.query.sort) {
-            const sortFields = req.query.sort.split(",");
-            sortFields.forEach((field) => {
-                const sortOrder = field.startsWith("-") ? "DESC" : "ASC";
-                const sortField = field.replace("-", "");
-                order.push([sortField, sortOrder]);
-            });
-        } else {
-            order.push(["created_at", "ASC"]); 
-        }
-
-      // Check if section exists
-      const section = await Section.findByPk(sectionId);
+    const businessError = new BusinessError(400, "Bad Request");
+    
+    // Use section_id from route if available, otherwise from body
+    const finalSectionId = sectionIdFromRoute || section_id;
+    
+    // Check if section exists
+    if (finalSectionId) {
+      const section = await Section.findByPk(finalSectionId);
       if (!section) {
-        const notFoundError = new BusinessError(404, "Not Found");
-        notFoundError.addError("data", `Section with id ${sectionId} not found`);
-        throw notFoundError;
+        businessError.addError("attributes.section_id", "Section does not exist");
       }
-
-      const [items, totalCount] = await Promise.all([
-        Question.findAll({
-          attributes,
-          offset,
-          limit: pageSize,
-          where: whereCondition,
-          order,
-        }),
-        Question.count({ where: whereCondition }),
-      ]);
-      const totalPages = Math.ceil(totalCount / pageSize);
-
-      let serializedData = QuestionSerializer.serialize(items);
-      //serializedData = removeEmpty(serializedData);
-      serializedData.meta = {
-            page: {
-                page_number: pageNumber,
-                page_size: pageSize,
-                total_count: totalCount,
-                total_pages: totalPages
-            }
-        };
-
-      res.status(200).json(serializedData);
-
-    }catch (error) {
-        next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
     }
-}
 
-exports.createQuestion = async (req, res, next) => {
-    try {
-      const {text, score_value, section_id} = req.body;
-      const sectionIdFromRoute = req.params.sectionId;
-
-      const businessError = new BusinessError(400, "Bad Request");
-      
-      // Use section_id from route if available, otherwise from body
-      const finalSectionId = sectionIdFromRoute || section_id;
-      
-      // Check if section exists
-      if (finalSectionId) {
-        const section = await Section.findByPk(finalSectionId);
-        if (!section) {
-          businessError.addError("attributes.section_id", "Section does not exist");
-        }
-      }
-
-      // Validate score_value
-      if (score_value !== undefined && (score_value < 0 || !Number.isInteger(score_value))) {
-        businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
-      }
-
-      if (businessError.errors.length > 0) throw businessError;
-
-      // Prepare data for creation
-      const createData = {
-        text,
-        score_value,
-        section_id: finalSectionId
-      };
-
-      const question = await Question.create(createData);
-      const serializedData = QuestionSerializer.serialize(question);
-      res.status(201).json(serializedData);
-
-    } catch (error) {
-        next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+    // Validate score_value
+    if (score_value !== undefined && (score_value < 0 || !Number.isInteger(score_value))) {
+      businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
     }
+
+    if (businessError.errors.length > 0) throw businessError;
+
+    // Add section_id to request body for creation
+    req.body.section_id = finalSectionId;
+
+    const newQuestion = await Question.create(req.body);
+    let serializedData = QuestionSerializer.serialize(newQuestion);
+    res.status(201).json(serializedData);
+  } catch (error) {
+    next(error);
   }
+};
 
-exports.updateQuestion = async (req, res, next) => {
+const updateQuestion = async (req, res, next) => {
   try {
     const id = req.params.questionId;
     const update = await Question.findByPk(id);
     const businessError = new BusinessError(400, "Bad Request");
     
     if (!update) {
-      const notFoundError = new BusinessError(404, "Not Found");
-      notFoundError.addError("data", `Question with id ${id} not found`);
-      throw notFoundError;
+      throw new NotFoundError("Question not found", "Question");
     }
 
     // Validate score_value if being updated
@@ -213,34 +122,35 @@ exports.updateQuestion = async (req, res, next) => {
 
     if (businessError.errors.length > 0) throw businessError;
 
-    // Only update the fields that are provided in the request
-    const updateData = {};
-    if (req.body.text !== undefined) updateData.text = req.body.text;
-    if (req.body.score_value !== undefined) updateData.score_value = req.body.score_value;
-
-    const updated = await update.update(updateData);
-    const serializedData = QuestionSerializer.serialize(updated);
-    res.status(200).json(serializedData);
-
+    await update.update(req.body);
+    let serializedData = QuestionSerializer.serialize(update);
+    res.json(serializedData);
   } catch (error) {
-    next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+    next(error);
   }
-}
+};
 
-exports.deleteQuestion = async (req, res, next) => {
+const deleteQuestion = async (req, res, next) => {
   try {
     const id = req.params.questionId;
     const question = await Question.findByPk(id);
     
     if (!question) {
-      const notFoundError = new BusinessError(404, "Not Found");
-      notFoundError.addError("data", `Question with id ${id} not found`);
-      throw notFoundError;
+      throw new NotFoundError("Question not found", "Question");
     }
 
     await question.destroy();
     res.status(204).send(); 
   } catch (error) {
-    next(error instanceof BusinessError ? error : new TechnicalError(500, "Internal Server Error", error.message));
+    next(error);
   }
-}
+};
+
+module.exports = {
+  getAllQuestions,
+  getQuestionById,
+  getQuestionsBySection,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+};

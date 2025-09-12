@@ -11,6 +11,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'section_id',
         as: 'questions'
       });
+      Section.hasMany(models.result_sections, {
+        foreignKey: 'section_id',
+        as: 'result_sections'
+      });
     }
   }
   Section.init({
