@@ -218,8 +218,10 @@ const createCrudOperations = ({
         }
       } else {
 
-        if(modelName === "Question" ) order.push(["level", "DESC"]);
-        else order.push(["created_at", "DESC"]);
+        if(modelName === "Question" )
+          order.push(["level", "DESC"]);
+        else 
+          order.push(["created_at", "DESC"]);
       }
 
       // Handle filtering
