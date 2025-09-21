@@ -9,6 +9,8 @@ const defaultConfig = {
         password: process.env.DB_PASSWORD,
         dialect: process.env.DB_DIALECT
     },
+    JWT_SECRET: process.env.JWT_SECRET || 'esg-secret-key',
+    JWT_EXPIRATION: process.env.JWT_EXPIRATION || '24h',
     port: process.env.SERVICE_PORT,
     limit: 10,
     offset: 0,
