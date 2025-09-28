@@ -14,7 +14,16 @@ env.config();
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization','Access-Control-Allow-Origin']
+    allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  maxAge: 86400 // 24 hours
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
