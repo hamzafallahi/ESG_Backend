@@ -4,7 +4,7 @@ services:
   app:
     build: .
     command:
-      [ "sh", "-c", "npx sequelize-cli db:migrate --config ./config/config.json --env local && npm start" ]
+      [ "sh", "-c", "npx sequelize-cli db:migrate --config ./config/config.json --env local && npx sequelize-cli db:seed:all --config ./config/config.json --env local && npm start" ]
 
     env_file:
       - ./env/.env.local
