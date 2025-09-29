@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const env = require('dotenv');
 const path = require('path');
 const config = require('./config/app-config');
-
 const routes = require('./routes');
 const errorHandler = require("./middleware/errorHandler");
 const cors = require("cors");
