@@ -8,7 +8,7 @@ const resultSectionRoutes = require('./resultSection');
 const categoryRoutes = require('./categories');
 const sectionRoutes = require('./sections');
 const questionRoutes = require('./questions');
-const mailRoutes = require('./mailRoutes'); 
+
 const authRoutes = require('./auth');
 const router = express.Router();
 
@@ -18,7 +18,6 @@ router.use('/result-sections', resultSectionRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
-router.use('/send-results', mailRoutes); 
 router.use('/auth', authRoutes);
 
 module.exports = router;    

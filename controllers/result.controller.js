@@ -4,6 +4,7 @@ const ResultSerializer = require( "../serializer/Result.serializer.js");
 const ResultInlineSerializer = require( "../serializer/Result.inline.serializer.js");
 const { createCrudOperations } = require( "../utils/crudOperations.js");
 const NotFoundError = require( "../error/exception/NotFound.js");
+const resultService = require('../services/resultService');
 
 const allowedFields = [
   "id",
@@ -47,6 +48,18 @@ const create = async (req, res, next) => {
   try {
     const newResult = await Result.create(req.body);
     let serializedData = ResultSerializer.serialize(newResult);
+    
+    // Send email and save to Google Sheets asynchronously (non-blocking)
+    // This runs in the background so the response is sent immediately
+    resultService.sendResultNotification(newResult)
+      .then(result => {
+        console.log('Result notification sent:', result);
+      })
+      .catch(error => {
+        console.error('Error sending result notification:', error);
+        // Don't fail the request if email/sheets fail
+      });
+    
     res.status(201).json(serializedData);
   } catch (error) {
     next(error);
