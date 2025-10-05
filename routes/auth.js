@@ -11,8 +11,7 @@ const validate = require('../middleware/validationMiddleware');
 router.post('/signup', validate(createRules), deserializeMiddleware(AuthDeserializer), authController.signup);
 router.post('/login', validate(loginRules), deserializeMiddleware(AuthDeserializer), authController.login);
 
-// Protected route - get current user info
-// We'll need to create a middleware to verify JWT token
+
 router.get('/me', authMiddleware, authController.getCurrentUser);
 
 // JWT verification middleware

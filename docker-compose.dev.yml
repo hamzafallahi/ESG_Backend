@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    command:
+      [ "sh", "-c", "npx sequelize-cli db:migrate --config ./config/config.json --env development && npm start" ]
+
+    env_file:
+      - ./env/.env.development
+    container_name: taa-esg-service-dev
+    ports:
+      - "8082:8082"
+    working_dir: /var/www
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+      - /var/www/node_modules
+    depends_on:
+      - postgres
+    networks:
+      - postgres
+
+
+  postgres:
+    container_name: postgres_container_dev
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres_dev:/data/postgres
+      - ./init-db-local.sql:/docker-entrypoint-initdb.d/init.sql  
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin_container_dev
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin_dev:/var/lib/pgadmin
+    ports:
+      - "5051:80"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+
+networks:
+  postgres:
+    driver: bridge 
+
+volumes:
+  postgres_dev:
+  pgadmin_dev:
