@@ -30,7 +30,7 @@ module.exports = (sequelize, type) => {
 
   ResultCategory.associate = function(models) {
     ResultCategory.belongsTo(models.results, { foreignKey: 'result_id', as: 'results'});
-    ResultCategory.belongsTo(models.category, { foreignKey: 'category_id' });
+    ResultCategory.belongsTo(models.category, { foreignKey: 'category_id', as: 'category' });
   };
 
   return ResultCategory;

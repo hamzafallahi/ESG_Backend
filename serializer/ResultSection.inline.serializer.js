@@ -17,7 +17,7 @@ const ResultSectionInlineSerializer = createInlineSerializer('result_section', {
     },
     section: {
       type: 'section',
-      attributes: ['name', 'description', 'created_at', 'updated_at']
+      attributes: ['title', 'title_fr', 'description', 'created_at', 'updated_at']
     }
   }
 });

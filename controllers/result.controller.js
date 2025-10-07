@@ -53,7 +53,7 @@ const create = async (req, res, next) => {
     // This runs in the background so the response is sent immediately
     resultService.sendResultNotification(newResult)
       .then(result => {
-        console.log('Result notification sent:', result);
+        console.log('Result notification sent: 1111111111111111111111111111111111', result);
       })
       .catch(error => {
         console.error('Error sending result notification:', error);
