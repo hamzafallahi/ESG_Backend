@@ -14,12 +14,18 @@
     }
   },
   "local": {
-    "username": "postgres",
-    "password": "changeme",
-    "database": "TAA_db",
-    "host": "postgres",
+    "username": "postgres1",
+    "password": "FhQ8Gpd0LpJZbrpOTKzpKtWsyGF1tqGU",
+    "database": "taa_db",
+    "host": "dpg-d3cfhu56ubrc73eo2c4g-a.oregon-postgres.render.com",
     "port": 5432,
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    }
   },
   "test": {
     "username": "postgres1",
