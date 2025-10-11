@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
   }
+  
   Category.init({
     id: {
       type: DataTypes.UUID,
