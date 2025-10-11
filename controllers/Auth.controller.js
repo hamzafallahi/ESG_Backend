@@ -8,7 +8,7 @@ const BusinessError = require('../error/BusinessError');
 const TechnicalError = require('../error/TechnicalError');
 
 // Signup - Register a new user
-exports.signup = async (req, res) => {
+exports.signup = async (req, res, next) => {
   try {
     console.log('Signup request body:', req.body);
     // Check if user with this email already exists
@@ -17,11 +17,9 @@ exports.signup = async (req, res) => {
     });
 
     if (existingUser) {
-      throw new BusinessError({
-        status: 409,
-        title: 'Email already in use',
-        detail: 'A user with this email already exists'
-      });
+      const businessError = new BusinessError(409, 'EMAIL_IN_USE', 'Email already in use');
+      businessError.addError('attributes.email', 'A user with this email already exists');
+      throw businessError;
     }
 
     // Create new user
@@ -41,12 +39,11 @@ exports.signup = async (req, res) => {
       token
     });
   } catch (error) {
-    throw new TechnicalError(500, 'SIGNUP_ERROR', 'An unexpected error occurred during signup', error.message);
+    next(error);
   }
 };
-
 // Login - Authenticate a user
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
   try {
     // Find user by email
     const user = await User.findOne({
@@ -54,22 +51,16 @@ exports.login = async (req, res) => {
     });
 
     if (!user) {
-      throw new NotFoundError({
-        status: 404,
-        title: 'User not found',
-        detail: 'No user found with this email'
-      });
+      throw new NotFoundError('User not found', 'User');
     }
 
     // Verify password
     const isValidPassword = await user.validPassword(req.body.password);
     
     if (!isValidPassword) {
-      throw new BusinessError({
-        status: 401,
-        title: 'Invalid credentials',
-        detail: 'Email or password is incorrect'
-      });
+      const businessError = new BusinessError(401, 'INVALID_CREDENTIALS', 'Invalid credentials');
+      businessError.addError('attributes.password', 'Email or password is incorrect');
+      throw businessError;
     }
 
     // Generate JWT token
@@ -86,26 +77,22 @@ exports.login = async (req, res) => {
       token
     });
   } catch (error) {
-    throw error;
+    next(error);
   }
 };
 
 // Get current user info
-exports.getCurrentUser = async (req, res) => {
+exports.getCurrentUser = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.userId);
     
     if (!user) {
-      throw new NotFoundError({
-        status: 404,
-        title: 'User not found',
-        detail: 'User no longer exists'
-      });
+      throw new NotFoundError('User not found', 'User');
     }
 
     const serializedUser = AuthSerializer.serialize(user.toJSON());
     return res.status(200).json(serializedUser);
   } catch (error) {
-    throw error;
+    next(error);
   }
 };
