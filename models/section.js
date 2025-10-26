@@ -9,7 +9,9 @@ module.exports = (sequelize, DataTypes) => {
       });
       Section.hasMany(models.question, {
         foreignKey: 'section_id',
-        as: 'questions'
+        as: 'questions',
+        // Default ordering by level descending
+        order: [['level', 'DESC']]
       });
       Section.hasMany(models.result_sections, {
         foreignKey: 'section_id',

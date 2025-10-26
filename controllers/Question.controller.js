@@ -71,13 +71,11 @@ const getQuestionsBySection = async (req, res, next) => {
 };
 const createQuestion = async (req, res, next) => {
   try {
-    const { text, score_value, section_id } = req.body;
     const sectionIdFromRoute = req.params.sectionId;
-
     const businessError = new BusinessError(400, "Bad Request");
     
     // Use section_id from route if available, otherwise from body
-    const finalSectionId = sectionIdFromRoute || section_id;
+    const finalSectionId = sectionIdFromRoute || req.body.section_id;
     
     // Check if section exists
     if (finalSectionId) {
@@ -88,8 +86,13 @@ const createQuestion = async (req, res, next) => {
     }
 
     // Validate score_value
-    if (score_value !== undefined && (score_value < 0 || !Number.isInteger(score_value))) {
+    if (req.body.score_value !== undefined && (req.body.score_value < 0 || !Number.isInteger(req.body.score_value))) {
       businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
+    }
+
+    // Validate level
+    if (req.body.level !== undefined && (req.body.level < 1 || req.body.level > 4 || !Number.isInteger(req.body.level))) {
+      businessError.addError("attributes.level", "Level must be an integer between 1 and 4");
     }
 
     if (businessError.errors.length > 0) throw businessError;
@@ -97,9 +100,7 @@ const createQuestion = async (req, res, next) => {
     // Add section_id to request body for creation
     req.body.section_id = finalSectionId;
 
-    const newQuestion = await Question.create(req.body);
-    let serializedData = QuestionSerializer.serialize(newQuestion);
-    res.status(201).json(serializedData);
+    await crudOps.create(req, res, next);
   } catch (error) {
     next(error);
   }
@@ -108,10 +109,10 @@ const createQuestion = async (req, res, next) => {
 const updateQuestion = async (req, res, next) => {
   try {
     const id = req.params.questionId;
-    const update = await Question.findByPk(id);
+    const question = await Question.findByPk(id);
     const businessError = new BusinessError(400, "Bad Request");
     
-    if (!update) {
+    if (!question) {
       throw new NotFoundError("Question not found", "Question");
     }
 
@@ -120,11 +121,16 @@ const updateQuestion = async (req, res, next) => {
       businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
     }
 
+    // Validate level if being updated
+    if (req.body.level !== undefined && (req.body.level < 1 || req.body.level > 4 || !Number.isInteger(req.body.level))) {
+      businessError.addError("attributes.level", "Level must be an integer between 1 and 4");
+    }
+
     if (businessError.errors.length > 0) throw businessError;
 
-    await update.update(req.body);
-    let serializedData = QuestionSerializer.serialize(update);
-    res.json(serializedData);
+    // Map questionId param to id for crudOps
+    req.params.id = req.params.questionId;
+    await crudOps.update(req, res, next);
   } catch (error) {
     next(error);
   }

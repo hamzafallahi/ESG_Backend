@@ -48,40 +48,10 @@ const getCategoryById = async (req, res, next) => {
 
 const createCategory = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
-
     const businessError = new BusinessError(400, "Bad Request");
     
     // Check for name uniqueness
-    if (name) {
-      const existingCategory = await Category.findOne({ where: { name } });
-      if (existingCategory) {
-        businessError.addError("attributes.name", "Name already exists. Name must be unique");
-      }
-    }
-
-    if (businessError.errors.length > 0) throw businessError;
-
-    const newCategory = await Category.create(req.body);
-    let serializedData = CategorySerializer.serialize(newCategory);
-    res.status(201).json(serializedData);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateCategory = async (req, res, next) => {
-  try {
-    const id = req.params.categoryId;
-    const update = await Category.findByPk(id);
-    const businessError = new BusinessError(400, "Bad Request");
-    
-    if (!update) {
-      throw new NotFoundError("Category not found", "Category");
-    }
-    
-    // Check name uniqueness if name is being updated
-    if (req.body.name && req.body.name !== update.name) {
+    if (req.body.name) {
       const existingCategory = await Category.findOne({ where: { name: req.body.name } });
       if (existingCategory) {
         businessError.addError("attributes.name", "Name already exists. Name must be unique");
@@ -90,9 +60,35 @@ const updateCategory = async (req, res, next) => {
 
     if (businessError.errors.length > 0) throw businessError;
 
-    await update.update(req.body);
-    let serializedData = CategorySerializer.serialize(update);
-    res.json(serializedData);
+    await crudOps.create(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateCategory = async (req, res, next) => {
+  try {
+    const id = req.params.categoryId;
+    const category = await Category.findByPk(id);
+    const businessError = new BusinessError(400, "Bad Request");
+    
+    if (!category) {
+      throw new NotFoundError("Category not found", "Category");
+    }
+    
+    // Check name uniqueness if name is being updated
+    if (req.body.name && req.body.name !== category.name) {
+      const existingCategory = await Category.findOne({ where: { name: req.body.name } });
+      if (existingCategory) {
+        businessError.addError("attributes.name", "Name already exists. Name must be unique");
+      }
+    }
+
+    if (businessError.errors.length > 0) throw businessError;
+
+    // Map categoryId param to id for crudOps
+    req.params.id = req.params.categoryId;
+    await crudOps.update(req, res, next);
   } catch (error) {
     next(error);
   }

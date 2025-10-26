@@ -72,13 +72,11 @@ const getSectionsByCategory = async (req, res, next) => {
 
 const createSection = async (req, res, next) => {
   try {
-    const { title, description, category_id } = req.body;
     const categoryIdFromRoute = req.params.categoryId;
-
     const businessError = new BusinessError(400, "Bad Request");
     
     // Use category_id from route if available, otherwise from body
-    const finalCategoryId = categoryIdFromRoute || category_id;
+    const finalCategoryId = categoryIdFromRoute || req.body.category_id;
     
     // Check if category exists
     if (finalCategoryId) {
@@ -93,9 +91,7 @@ const createSection = async (req, res, next) => {
     // Add category_id to request body for creation
     req.body.category_id = finalCategoryId;
 
-    const newSection = await Section.create(req.body);
-    let serializedData = SectionSerializer.serialize(newSection);
-    res.status(201).json(serializedData);
+    await crudOps.create(req, res, next);
   } catch (error) {
     next(error);
   }
@@ -104,15 +100,15 @@ const createSection = async (req, res, next) => {
 const updateSection = async (req, res, next) => {
   try {
     const id = req.params.sectionId;
-    const update = await Section.findByPk(id);
+    const section = await Section.findByPk(id);
     
-    if (!update) {
+    if (!section) {
       throw new NotFoundError("Section not found", "Section");
     }
 
-    await update.update(req.body);
-    let serializedData = SectionSerializer.serialize(update);
-    res.json(serializedData);
+    // Map sectionId param to id for crudOps
+    req.params.id = req.params.sectionId;
+    await crudOps.update(req, res, next);
   } catch (error) {
     next(error);
   }

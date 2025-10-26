@@ -1,5 +1,5 @@
 const express = require('express');
-
+const { authenticate } = require('../middleware/authMiddleware');
 
 // Import route modules
 const resultRoutes = require('./result');
@@ -8,9 +8,15 @@ const resultSectionRoutes = require('./resultSection');
 const categoryRoutes = require('./categories');
 const sectionRoutes = require('./sections');
 const questionRoutes = require('./questions');
-
 const authRoutes = require('./auth');
+const adminRoutes = require('./admins');
 const router = express.Router();
+
+// Public routes (no authentication required)
+router.use('/auth', authRoutes);
+
+// All routes below require authentication
+router.use(authenticate);
 
 router.use('/results', resultRoutes);
 router.use('/result-categories', resultCategoryRoutes);
@@ -18,6 +24,6 @@ router.use('/result-sections', resultSectionRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
-router.use('/auth', authRoutes);
+router.use('/admins', adminRoutes);
 
 module.exports = router;    

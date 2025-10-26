@@ -1,0 +1,23 @@
+const express = require('express');
+const router = express.Router();
+const adminController = require('../controllers/Admin.controller');
+const { create, update, getAll } = require('../validation/Admin.rules.js');
+const AdminDeserializer = require('../deserializer/admindeserializer.js');
+const deserializeMiddleware = require('../middleware/deserializeMiddleware');
+const validate = require('../middleware/validationMiddleware');
+const { requireSuperAdmin } = require('../middleware/authMiddleware');
+
+// All admin routes require super admin role (authentication already handled in index.js)
+router.use(requireSuperAdmin);
+
+router.get('/', validate(getAll), adminController.getAllAdmins);
+
+router.get('/:adminId', adminController.getAdminById);
+
+router.post('/', validate(create), deserializeMiddleware(AdminDeserializer), adminController.createAdmin);
+
+router.patch('/:adminId', validate(update), deserializeMiddleware(AdminDeserializer), adminController.updateAdmin);
+
+router.delete('/:adminId', adminController.deleteAdmin);
+
+module.exports = router;
