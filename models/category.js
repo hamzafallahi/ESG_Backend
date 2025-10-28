@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Category.hasMany(models.section, {
         foreignKey: 'category_id',
-        as: 'sections'
+        as: 'sections',
+        onDelete: 'CASCADE'
       });
       Category.hasMany(models.result_categories, {
         foreignKey: 'category_id',

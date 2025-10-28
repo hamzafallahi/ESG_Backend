@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'section_id',
         as: 'questions',
         // Default ordering by level descending
-        order: [['level', 'DESC']]
+        order: [['level', 'DESC']],
+        onDelete: 'CASCADE'
       });
       Section.hasMany(models.result_sections, {
         foreignKey: 'section_id',

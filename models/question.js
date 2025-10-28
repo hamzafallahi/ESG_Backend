@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Question.belongsTo(models.section, {
         foreignKey: 'section_id',
-        as: 'section'
+        as: 'section',
+        onDelete: 'CASCADE'
       });
     }
   }
