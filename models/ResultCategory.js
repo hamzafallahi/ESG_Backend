@@ -29,8 +29,8 @@ module.exports = (sequelize, type) => {
   });
 
   ResultCategory.associate = function(models) {
-    ResultCategory.belongsTo(models.results, { foreignKey: 'result_id', as: 'results'});
-    ResultCategory.belongsTo(models.category, { foreignKey: 'category_id', as: 'category' });
+    ResultCategory.belongsTo(models.results, { foreignKey: 'result_id', as: 'results', onDelete: 'CASCADE'});
+    ResultCategory.belongsTo(models.category, { foreignKey: 'category_id', as: 'category', onDelete: 'CASCADE' });
   };
 
   return ResultCategory;

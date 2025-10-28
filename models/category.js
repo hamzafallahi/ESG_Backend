@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) => {
       });
       Category.hasMany(models.result_categories, {
         foreignKey: 'category_id',
-        as: 'result_categories'
+        as: 'result_categories',
+        onDelete: 'CASCADE'
       });
     }
   }
