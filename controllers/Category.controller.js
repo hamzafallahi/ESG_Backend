@@ -104,12 +104,12 @@ const deleteCategory = async (req, res, next) => {
     }
 
     // Check if category has sections
-    const sectionsCount = await Section.count({ where: { category_id: id } });
+    /*const sectionsCount = await Section.count({ where: { category_id: id } });
     if (sectionsCount > 0) {
       const businessError = new BusinessError(400, "Bad Request");
       businessError.addError("data", "Cannot delete category that has sections. Please delete all sections first.");
       throw businessError;
-    }
+    }*/
 
     await category.destroy();
     res.status(204).send(); 

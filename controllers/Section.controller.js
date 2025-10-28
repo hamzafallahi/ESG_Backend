@@ -124,12 +124,12 @@ const deleteSection = async (req, res, next) => {
     }
 
     // Check if section has questions
-    const questionsCount = await Question.count({ where: { section_id: id } });
+   /* const questionsCount = await Question.count({ where: { section_id: id } });
     if (questionsCount > 0) {
       const businessError = new BusinessError(400, "Bad Request");
       businessError.addError("data", "Cannot delete section that has questions. Please delete all questions first.");
       throw businessError;
-    }
+    }*/
 
     await section.destroy();
     res.status(204).send(); 
