@@ -104,6 +104,12 @@ module.exports = {
       })
       .options({ abortEarly: false }),
   },
+  delete: {
+    headers: Joi.object().keys({}).unknown(true),
+    body: Joi.object().keys({}).length(0).messages({
+      'object.length': 'DELETE requests should not contain a body'
+    }),
+  },
   getAll: {
     query: getAllQuerySchema,
   }

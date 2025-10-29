@@ -53,7 +53,9 @@ exports.login = async (req, res, next) => {
     });
 
     if (!user) {
-      throw new NotFoundError('User not found', 'User');
+      const businessError = new BusinessError(401, 'INVALID_CREDENTIALS', 'Invalid credentials');
+      businessError.addError('attributes.email', 'Email or password is incorrect');
+      throw businessError;
     }
 
     // Verify password
@@ -115,7 +117,9 @@ exports.adminLogin = async (req, res, next) => {
     }
     
     if (!user) {
-      throw new NotFoundError('Admin not found', 'Admin');
+      const businessError = new BusinessError(401, 'INVALID_CREDENTIALS', 'Invalid credentials');
+      businessError.addError('attributes.email', 'Email or password is incorrect');
+      throw businessError;
     }
 
     // Check if admin is active

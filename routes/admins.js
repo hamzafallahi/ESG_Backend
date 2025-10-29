@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/Admin.controller');
-const { create, update, getAll } = require('../validation/Admin.rules.js');
+const { create, update, getAll, delete: deleteValidation } = require('../validation/Admin.rules.js');
 const AdminDeserializer = require('../deserializer/admindeserializer.js');
 const deserializeMiddleware = require('../middleware/deserializeMiddleware');
 const validate = require('../middleware/validationMiddleware');
@@ -18,6 +18,6 @@ router.post('/', validate(create), deserializeMiddleware(AdminDeserializer), adm
 
 router.patch('/:adminId', validate(update), deserializeMiddleware(AdminDeserializer), adminController.updateAdmin);
 
-router.delete('/:adminId', adminController.deleteAdmin);
+router.delete('/:adminId', validate(deleteValidation), adminController.deleteAdmin);
 
 module.exports = router;
