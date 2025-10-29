@@ -1,4 +1,4 @@
 -- init.sql
-CREATE DATABASE "taa_db_9tuc";
+CREATE DATABASE "taa_db";
 -- Optionally create a user and grant privileges
-GRANT ALL PRIVILEGES ON DATABASE "taa_db_9tuc" TO postgres;
+GRANT ALL PRIVILEGES ON DATABASE "taa_db" TO postgres;

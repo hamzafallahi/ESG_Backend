@@ -1,36 +1,24 @@
 {
   "development": {
-    "username": "postgres1",
-    "password": "AabPhi6M0eDbPw2XOuVSzFu06XhYK9C7",
-    "database": "taa_db_9tuc",
-    "host": "dpg-d4096buuk2gs739t0m6g-a-postgres.render.com",
+    "username": "postgres",
+    "password": "changeme",
+    "database": "taa_db",
+    "host": "postgres",
     "port": 5432,
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
-    }
+    "dialect": "postgres"
   },
   "local": {
-    "username": "postgres1",
-    "password": "AabPhi6M0eDbPw2XOuVSzFu06XhYK9C7",
-    "database": "taa_db_9tuc",
-    "host": "dpg-d4096buuk2gs739t0m6g-a-postgres.render.com",
+    "username": "postgres",
+    "password": "changeme",
+    "database": "taa_db",
+    "host": "postgres",
     "port": 5432,
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
-    }
+    "dialect": "postgres"
   },
   "test": {
     "username": "postgres1",
     "password": "null",
-    "database": "taa_db_9tuc_test",
+    "database": "taa_db_test",
     "host": "dpg-d4096buuk2gs739t0m6g-a-postgres.render.com",
     "port": 5432,
     "dialect": "postgres",
@@ -44,7 +32,7 @@
   "production": {
     "username": "postgres1",
     "password": "AabPhi6M0eDbPw2XOuVSzFu06XhYK9C7",
-    "database": "taa_db_9tuc",
+    "database": "taa_db",
     "host": "dpg-d4096buuk2gs739t0m6g-a-postgres.render.com",
     "port": 5432,
     "dialect": "postgres",
