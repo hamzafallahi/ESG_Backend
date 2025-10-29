@@ -12,6 +12,13 @@ module.exports = (sequelize, DataTypes) => {
     async validPassword(password) {
       return await bcrypt.compare(password, this.password);
     }
+
+    // Remove password from JSON output
+    toJSON() {
+      const values = { ...this.get() };
+      delete values.password;
+      return values;
+    }
   }
   
   User.init({
@@ -65,8 +72,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
+    timestamps: true,
+    paranoid: true,
     modelName: 'user',
     tableName: 'users',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
     underscored: true,
     hooks: {
       // Hash the password before creating a user

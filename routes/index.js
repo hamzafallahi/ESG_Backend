@@ -10,6 +10,7 @@ const sectionRoutes = require('./sections');
 const questionRoutes = require('./questions');
 const authRoutes = require('./auth');
 const adminRoutes = require('./admins');
+const userRoutes = require('./users');
 const router = express.Router();
 
 // Public routes (no authentication required)
@@ -25,5 +26,6 @@ router.use('/categories', categoryRoutes);
 router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
 router.use('/admins', adminRoutes);
+router.use('/users', userRoutes);
 
 module.exports = router;    
