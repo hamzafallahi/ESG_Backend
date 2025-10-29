@@ -15,8 +15,8 @@ const defaultConfig = {
             }
         }
     },
-    JWT_SECRET: process.env.JWT_SECRET || 'esg-secret-key',
-    JWT_EXPIRATION: process.env.JWT_EXPIRATION || '24h',
+    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_EXPIRATION: process.env.JWT_EXPIRATION,
     port: process.env.SERVICE_PORT,
     limit: 10,
     offset: 0,
