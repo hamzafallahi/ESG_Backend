@@ -266,12 +266,15 @@ const createCrudOperations = ({
         total_pages: totalPages,
       };
 
+      // Convert items to plain objects if they have toJSON method
+      const itemsData = items.map(item => item.toJSON ? item.toJSON() : item);
+
       // Use inline serializer if includes are present and inline serializer is available
       let serializedData;
       if (hasIncludes && InlineSerializer) {
-        serializedData = InlineSerializer.serialize(items, meta);
+        serializedData = InlineSerializer.serialize(itemsData, meta);
       } else {
-        serializedData = Serializer.serialize(items);
+        serializedData = Serializer.serialize(itemsData);
         serializedData.meta = meta;
       }
 
@@ -333,12 +336,15 @@ const createCrudOperations = ({
         throw new NotFoundError(`${modelName} not found`, modelName);
       }
 
+      // Convert to plain object if it has toJSON method
+      const itemData = item.toJSON ? item.toJSON() : item;
+
       // Use inline serializer if includes are present and inline serializer is available
       let serializedData;
       if (hasIncludes && InlineSerializer) {
-        serializedData = InlineSerializer.serialize(item);
+        serializedData = InlineSerializer.serialize(itemData);
       } else {
-        serializedData = Serializer.serialize(item);
+        serializedData = Serializer.serialize(itemData);
       }
 
       res.json(serializedData);
@@ -356,7 +362,9 @@ const createCrudOperations = ({
 
       const newItem = await Model.create(req.body);
 
-      let serializedData = Serializer.serialize(newItem);
+      // Convert to plain object if it has toJSON method
+      const itemData = newItem.toJSON ? newItem.toJSON() : newItem;
+      let serializedData = Serializer.serialize(itemData);
       res.status(201).json(serializedData);
     } catch (error) {
       next(error);
@@ -381,7 +389,9 @@ const createCrudOperations = ({
 
       await item.update(req.body);
 
-      let serializedData = Serializer.serialize(item);
+      // Convert to plain object if it has toJSON method
+      const itemData = item.toJSON ? item.toJSON() : item;
+      let serializedData = Serializer.serialize(itemData);
       res.json(serializedData);
     } catch (error) {
       next(error);
