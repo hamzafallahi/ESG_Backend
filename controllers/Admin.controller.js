@@ -151,7 +151,7 @@ const deleteAdmin = async (req, res, next) => {
     }
 
     req.params.id = req.params.adminId;
-    await crudOps.delete(req, res, next);
+    await crudOps.remove(req, res, next);
   } catch (error) {
     next(error);
   }
