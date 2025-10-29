@@ -5,13 +5,7 @@
     "database": "taa_db",
     "host": "postgres",
     "port": 5432,
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
-    }
+    "dialect": "postgres"
   },
   "local": {
     "username": "postgres",
@@ -19,13 +13,7 @@
     "database": "taa_db",
     "host": "postgres",
     "port": 5432,
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
-    }
+    "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
