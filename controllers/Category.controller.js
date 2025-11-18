@@ -111,8 +111,9 @@ const deleteCategory = async (req, res, next) => {
       throw businessError;
     }*/
 
-    await category.destroy();
-    res.status(204).send(); 
+    // Map categoryId param to id for crudOps
+    req.params.id = req.params.categoryId;
+    await crudOps.remove(req, res, next);
   } catch (error) {
     next(error);
   }

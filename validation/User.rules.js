@@ -110,5 +110,8 @@ module.exports = {
   },
   getAll: {
     query: getAllQuerySchema,
+    body: Joi.object().keys({}).length(0).messages({
+      'object.length': 'GET requests should not contain a body'
+    }),
   }
 };

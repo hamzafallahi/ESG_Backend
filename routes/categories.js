@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const categoryController = require('../controllers/Category.controller');
 const sectionController = require('../controllers/Section.controller');
-const { create, update, getAll }  = require('../validation/Categories.rules.js');
+const { create, update, getAll, delete: deleteValidation }  = require('../validation/Categories.rules.js');
 const { create: createSection, getAll: getAllSections }  = require('../validation/Sections.rules.js');
 const CategoryDeserializer = require('../deserializer/categorydeserializer.js');
 const SectionDeserializer = require('../deserializer/sectiondeserializer.js');
@@ -20,7 +20,7 @@ router.post('/', requireAdmin, validate(create), deserializeMiddleware(CategoryD
 
 router.patch('/:categoryId', requireAdmin, validate(update), deserializeMiddleware(CategoryDeserializer), categoryController.updateCategory);
 
-router.delete('/:categoryId', requireAdmin, categoryController.deleteCategory);
+router.delete('/:categoryId', requireAdmin, validate(deleteValidation), categoryController.deleteCategory);
 
 // Nested routes for sections under categories
 router.get('/:categoryId/sections', validate(getAllSections), sectionController.getSectionsByCategory);
