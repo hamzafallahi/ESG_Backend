@@ -11,6 +11,7 @@ const questionRoutes = require('./questions');
 const authRoutes = require('./auth');
 const adminRoutes = require('./admins');
 const userRoutes = require('./users');
+const recommendationRoutes = require('./recommendations');
 const router = express.Router();
 
 // Public routes (no authentication required)
@@ -27,5 +28,6 @@ router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
 router.use('/admins', adminRoutes);
 router.use('/users', userRoutes);
+router.use('/recommendations', recommendationRoutes);
 
 module.exports = router;    

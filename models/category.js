@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
         as: 'result_categories',
         onDelete: 'CASCADE'
       });
+      Category.hasMany(models.recommendations, {
+        foreignKey: 'category_id',
+        as: 'recommendations',
+        onDelete: 'CASCADE'
+      });
     }
   }
   Category.init({

@@ -8,9 +8,10 @@ const db = require('../models');
 const authenticate = async (req, res, next) => {
   try {
     // Get the token from the header
+    console.log('Authenticating request:', req.method, req.originalUrl);
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
+    console.log('Auth Header:', authHeader);
     if (!token) {
       return res.status(401).json({ 
         errors: [{
