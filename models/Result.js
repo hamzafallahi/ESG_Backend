@@ -33,5 +33,25 @@ module.exports = (sequelize, type) => {
     Result.hasMany(models.result_sections, { foreignKey: 'result_id' ,    as: 'result_sections', onDelete: 'CASCADE' });
   };
 
+  // Hook to reset AssessmentProgress after Result is created
+  Result.afterCreate(async (result, options) => {
+    const AssessmentProgress = sequelize.models.assessment_progress;
+    if (AssessmentProgress && result.user_id) {
+      const progress = await AssessmentProgress.findOne({
+        where: { user_id: result.user_id }
+      });
+      
+      if (progress) {
+        await progress.update({
+          answers: {},
+          current_page: 0,
+          ui_state: {},
+          answered_questions: 0,
+          completion_percentage: 0.00
+        });
+      }
+    }
+  });
+
   return Result;
 };
