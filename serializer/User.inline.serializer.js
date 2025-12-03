@@ -5,6 +5,7 @@ module.exports = new Serializer('users', {
     'organization_name',
     'phone_number',
     'email',
+    'next_allowed_assessment_date',
     'created_at',
     'updated_at'
   ],

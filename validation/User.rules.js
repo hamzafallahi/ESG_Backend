@@ -5,6 +5,7 @@ const ALLOWED_FIELDS = [
   "organization_name",
   "phone_number",
   "email",
+  "next_allowed_assessment_date",
   "created_at",
   "updated_at",
 ];
@@ -12,6 +13,7 @@ const ALLOWED_FIELDS = [
 const ALLOWED_SORT_FIELDS = [
   "organization_name",
   "email",
+  "next_allowed_assessment_date",
   "created_at",
   "updated_at"
 ];
@@ -35,6 +37,7 @@ const userUpdateDataSchema = {
     phone_number: Joi.string().max(20),
     email: Joi.string().email(),
     password: Joi.string().min(6).max(100),
+    next_allowed_assessment_date: Joi.date().iso().allow(null),
   }),
 };
 

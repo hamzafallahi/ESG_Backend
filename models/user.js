@@ -74,6 +74,11 @@ module.exports = (sequelize, DataTypes) => {
           msg: 'Password must be at least 6 characters long'
         }
       }
+    },
+    next_allowed_assessment_date: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
     }
   }, {
     sequelize,
