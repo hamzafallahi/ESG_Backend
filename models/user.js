@@ -6,6 +6,11 @@ module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
       // Define associations here if needed
+      User.hasOne(models.assessment_progress, {
+        foreignKey: 'user_id',
+        as: 'assessment_progress',
+        onDelete: 'CASCADE'
+      });
     }
 
     // Method to check if password matches
@@ -92,6 +97,21 @@ module.exports = (sequelize, DataTypes) => {
         if (user.changed('password')) {
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+      // Create AssessmentProgress entry after user is created
+      afterCreate: async (user) => {
+        const AssessmentProgress = sequelize.models.assessment_progress;
+        if (AssessmentProgress) {
+          await AssessmentProgress.create({
+            user_id: user.id,
+            answers: {},
+            current_page: 0,
+            ui_state: {},
+            total_questions: 0,
+            answered_questions: 0,
+            completion_percentage: 0.00
+          });
         }
       }
     }
