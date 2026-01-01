@@ -12,7 +12,7 @@ env.config();
 
 app.use(cors({
   origin: '*', 
-  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE','OPTIONS'],
     allowedHeaders: [
     'Content-Type', 
     'Authorization', 

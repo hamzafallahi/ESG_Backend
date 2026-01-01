@@ -10,6 +10,18 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'created_by',
         as: 'creator'
       });
+
+      // Admin can send many inbox messages
+      Admin.hasMany(models.inbox_message, {
+        foreignKey: 'sent_by_admin_id',
+        as: 'sent_messages'
+      });
+
+      // Admin can read many messages
+      Admin.hasMany(models.message_read, {
+        foreignKey: 'admin_id',
+        as: 'read_messages'
+      });
     }
 
     // Method to check if password matches

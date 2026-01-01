@@ -88,9 +88,40 @@ const requireUser = (req, res, next) => {
   next();
 };
 
+/**
+ * Optional authentication middleware
+ * Attaches user info if token is provided and valid, but doesn't require it
+ */
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      // No token provided, continue without user info
+      req.userId = null;
+      req.userRole = null;
+      return next();
+    }
+
+    // Try to verify token
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    req.userId = decoded.id;
+    req.userRole = decoded.role;
+    
+    next();
+  } catch (error) {
+    // Invalid token, continue without user info
+    req.userId = null;
+    req.userRole = null;
+    next();
+  }
+};
+
 module.exports = {
   authenticate,
   requireAdmin,
   requireSuperAdmin,
-  requireUser
+  requireUser,
+  optionalAuthenticate
 };

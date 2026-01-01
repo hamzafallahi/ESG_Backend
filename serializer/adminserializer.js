@@ -10,7 +10,9 @@ const AdminSerializer = new Serializer('admins', {
     'created_by',
     'created_at',
     'updated_at',
-    'creator'
+    'creator',
+    'sent_messages',
+    'read_messages'
   ],
   keyForAttribute: 'underscore_case',
   pluralizeType: true,
@@ -18,6 +20,16 @@ const AdminSerializer = new Serializer('admins', {
     ref: 'id',
     included: false,
     attributes: ['username', 'email', 'first_name', 'last_name']
+  },
+  sent_messages: {
+    ref: 'id',
+    included: false,
+    attributes: ['type', 'payload', 'created_at', 'updated_at']
+  },
+  read_messages: {
+    ref: 'id',
+    included: false,
+    attributes: ['message_id', 'created_at', 'updated_at']
   }
 });
 

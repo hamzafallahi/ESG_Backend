@@ -15,6 +15,14 @@ const AdminInlineSerializer = createInlineSerializer('admin', {
     creator: {
       type: 'super_admin',
       attributes: ['username', 'email', 'first_name', 'last_name']
+    },
+    sent_messages: {
+      type: 'inbox_message',
+      attributes: ['type', 'payload', 'created_at', 'updated_at']
+    },
+    read_messages: {
+      type: 'message_read',
+      attributes: ['message_id', 'created_at', 'updated_at']
     }
   }
 });

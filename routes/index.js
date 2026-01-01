@@ -11,12 +11,20 @@ const questionRoutes = require('./questions');
 const authRoutes = require('./auth');
 const adminRoutes = require('./admins');
 const userRoutes = require('./users');
+const profileRoutes = require('./profile');
+const eventRoutes = require('./Event'); 
 const assessmentProgressRoutes = require('./assessmentProgress');
 const settingsRoutes = require('./settings');
+const inboxMessageRoutes = require('./inboxMessages');
+const messageReadRoutes = require('./messageReads');
+const inboxActionsRoutes = require('./inboxActions');
 const router = express.Router();
 
 // Public routes (no authentication required)
 router.use('/auth', authRoutes);
+
+// Inbox actions has mixed auth (some public, some authenticated, some admin)
+router.use('/inbox-actions', inboxActionsRoutes);
 
 // All routes below require authentication
 router.use(authenticate);
@@ -29,7 +37,11 @@ router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
 router.use('/admins', adminRoutes);
 router.use('/users', userRoutes);
+router.use('/profile', profileRoutes);
+router.use('/events', eventRoutes);
 router.use('/assessment-progress', assessmentProgressRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/inbox-messages', inboxMessageRoutes);
+router.use('/message-reads', messageReadRoutes);
 
 module.exports = router;    

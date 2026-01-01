@@ -1,4 +1,6 @@
 const { DateTime, Duration } = require('luxon');
+const { notifyAdminsOfResultFeedback } = require('../helper/notificationHelper');
+
 module.exports = (sequelize, type) => {
   const Result = sequelize.define('results', {
     id: {
@@ -39,6 +41,7 @@ module.exports = (sequelize, type) => {
     const AssessmentProgress = sequelize.models.assessment_progress;
     const User = sequelize.models.user;
     const Settings = sequelize.models.settings;
+    const InboxMessage = sequelize.models.inbox_message;
     
     if (result.user_id) {
       // Reset assessment progress
@@ -73,6 +76,32 @@ module.exports = (sequelize, type) => {
           await user.update({
             next_allowed_assessment_date: nextAllowedDate
           });
+        }
+        
+        // Create result_feedback inbox message and notify admins
+        if (user && InboxMessage) {
+          try {
+            const inboxMessage = await InboxMessage.create({
+              sent_by_user_id: result.user_id,
+              sent_by_admin_id: null,
+              sent_by_super_admin_id: null,
+              type: 'result_feedback',
+              payload: { result_id: result.id },
+              status: null
+            });
+            
+            // Notify all connected admins
+            notifyAdminsOfResultFeedback(
+              result.user_id,
+              user.organization_name,
+              user.organization_name,
+              result.id,
+              inboxMessage.id
+            );
+          } catch (error) {
+            console.error('Error creating result feedback inbox message:', error);
+            // Don't fail the result creation if inbox message fails
+          }
         }
       }
     }
