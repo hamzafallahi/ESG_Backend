@@ -26,6 +26,9 @@ router.use('/auth', authRoutes);
 // Inbox actions has mixed auth (some public, some authenticated, some admin)
 router.use('/inbox-actions', inboxActionsRoutes);
 
+// SSE events use their own authentication middleware (supports query params)
+router.use('/events', eventRoutes);
+
 // All routes below require authentication
 router.use(authenticate);
 
@@ -38,7 +41,6 @@ router.use('/questions', questionRoutes);
 router.use('/admins', adminRoutes);
 router.use('/users', userRoutes);
 router.use('/profile', profileRoutes);
-router.use('/events', eventRoutes);
 router.use('/assessment-progress', assessmentProgressRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/inbox-messages', inboxMessageRoutes);
