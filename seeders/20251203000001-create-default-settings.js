@@ -9,8 +9,8 @@ module.exports = {
         value: JSON.stringify({
           duration: 'P6M'
         }),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        created_at: new Date(),
+        updated_at: new Date()
       }
     ], {});
   },
