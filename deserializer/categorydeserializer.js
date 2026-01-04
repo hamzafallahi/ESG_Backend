@@ -5,7 +5,6 @@ class CategoryDeserializer {
     if (attributes.category_id !== undefined) result.id = attributes.category_id;
     if (attributes.name !== undefined) result.name = attributes.name;
     if (attributes.name_fr !== undefined) result.name_fr = attributes.name_fr;
-    if (attributes.color !== undefined) result.color = attributes.color;
     if (attributes.description !== undefined) result.description = attributes.description;
 
     return result;
