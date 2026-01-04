@@ -45,12 +45,43 @@ const errorHandler = (err, req, res, next) => {
     return sendErrorResponse(parseInt(err.status) || 500, errors);
   }
 
+  // Handle Sequelize/Database errors
+  if (err.name === 'SequelizeDatabaseError' || err.parent) {
+    const dbError = err.parent || err;
+    const errorDetail = dbError.message || err.message;
+    const hint = dbError.hint ? ` Hint: ${dbError.hint}` : '';
+    
+    const errors = [formatError({
+      status: '500',
+      title: 'Database Error',
+      detail: `${errorDetail}${hint}`,
+      code: err.parent?.code || 'DATABASE_ERROR'
+    })];
+    return sendErrorResponse(500, errors);
+  }
 
+  // Handle Sequelize validation errors
+  if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
+    const errors = err.errors?.map(e => formatError({
+      status: '400',
+      title: 'Validation Error',
+      detail: e.message,
+      code: 'VALIDATION_ERROR'
+    })) || [formatError({
+      status: '400',
+      title: 'Validation Error',
+      detail: err.message,
+      code: 'VALIDATION_ERROR'
+    })];
+    return sendErrorResponse(400, errors);
+  }
+
+  // Handle other known error types with their actual message
   const defaultError = formatError({
     status: '500',
     title: 'Internal Server Error',
-    detail: 'An unexpected error occurred on the server.',
-    code: 'INTERNAL_SERVER_ERROR'
+    detail: err.message || 'An unexpected error occurred on the server.',
+    code: err.code || 'INTERNAL_SERVER_ERROR'
   });
   return sendErrorResponse(500, [defaultError]);
 };

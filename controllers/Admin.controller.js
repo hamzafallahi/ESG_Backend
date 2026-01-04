@@ -24,7 +24,7 @@ const crudOps = createCrudOperations({
   modelName: "Admin",
   Serializer: AdminSerializer,
   InlineSerializer: AdminInlineSerializer,
-  allowedIncludes: ["creator"],
+  allowedIncludes: ["creator", "sent_messages", "read_messages"],
   allowedFields,
   defaultIncludes: [],
 });

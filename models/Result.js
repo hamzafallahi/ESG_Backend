@@ -1,3 +1,6 @@
+const { DateTime, Duration } = require('luxon');
+const { notifyAdminsOfResultFeedback } = require('../helper/notificationHelper');
+
 module.exports = (sequelize, type) => {
   const Result = sequelize.define('results', {
     id: {
@@ -36,19 +39,73 @@ module.exports = (sequelize, type) => {
   // Hook to reset AssessmentProgress after Result is created
   Result.afterCreate(async (result, options) => {
     const AssessmentProgress = sequelize.models.assessment_progress;
-    if (AssessmentProgress && result.user_id) {
-      const progress = await AssessmentProgress.findOne({
-        where: { user_id: result.user_id }
-      });
-      
-      if (progress) {
-        await progress.update({
-          answers: {},
-          current_page: 0,
-          ui_state: {},
-          answered_questions: 0,
-          completion_percentage: 0.00
+    const User = sequelize.models.user;
+    const Settings = sequelize.models.settings;
+    const InboxMessage = sequelize.models.inbox_message;
+    
+    if (result.user_id) {
+      // Reset assessment progress
+      if (AssessmentProgress) {
+        const progress = await AssessmentProgress.findOne({
+          where: { user_id: result.user_id }
         });
+        
+        if (progress) {
+          await progress.update({
+            answers: {},
+            current_page: 0,
+            ui_state: {},
+            answered_questions: 0,
+            completion_percentage: 0.00
+          });
+        }
+      }
+      
+      // Update user's next_allowed_assessment_date
+      if (User && Settings) {
+        const user = await User.findByPk(result.user_id);
+        const cooldownSetting = await Settings.findOne({
+          where: { key: 'assessment_cooldown' }
+        });
+        
+        if (user && cooldownSetting) {
+          const durationISO = cooldownSetting.value.duration; // ISO 8601 duration (e.g., 'P6M')
+          const duration = Duration.fromISO(durationISO);
+          const nextAllowedDate = DateTime.now().plus(duration).toJSDate();
+          
+          await user.update({
+            next_allowed_assessment_date: nextAllowedDate
+          });
+        }
+        
+        // Create result_feedback inbox message and notify admins
+        if (user && InboxMessage) {
+          try {
+            const inboxMessage = await InboxMessage.create({
+              sent_by_user_id: result.user_id,
+              sent_by_admin_id: null,
+              sent_by_super_admin_id: null,
+              type: 'result_feedback',
+              payload: { 
+                result_id: result.id,
+                global_feedback: result.global_feedback
+              },
+              status: null
+            });
+            
+            // Notify all connected admins
+            notifyAdminsOfResultFeedback(
+              result.user_id,
+              user.organization_name,
+              user.organization_name,
+              result.id,
+              inboxMessage.id
+            );
+          } catch (error) {
+            console.error('Error creating result feedback inbox message:', error);
+            // Don't fail the result creation if inbox message fails
+          }
+        }
       }
     }
   });

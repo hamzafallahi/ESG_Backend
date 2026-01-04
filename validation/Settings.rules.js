@@ -2,53 +2,29 @@ const Joi = require("joi");
 
 const ALLOWED_FIELDS = [
   "id",
-  "organization_name",
-  "phone_number",
-  "email",
-  "next_allowed_assessment_date",
+  "key",
+  "value",
   "created_at",
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = [
-  "organization_name",
-  "email",
-  "next_allowed_assessment_date",
-  "created_at",
-  "updated_at"
-];
+const ALLOWED_SORT_FIELDS = ["key", "created_at", "updated_at"];
 
-const userDataSchema = {
-  type: Joi.string().valid("users").required(),
+const settingDataSchema = {
+  type: Joi.string().valid("settings").required(),
   attributes: Joi.object()
     .keys({
-      organization_name: Joi.string().max(255).required(),
-      phone_number: Joi.string().max(20).required(),
-      email: Joi.string().email().required(),
-      password: Joi.string().min(6).max(100).required(),
+      key: Joi.string().max(255).required(),
+      value: Joi.object().required(),
     })
     .required(),
 };
 
-const userUpdateDataSchema = {
-  type: Joi.string().valid("users").required(),
+const settingUpdateDataSchema = {
+  type: Joi.string().valid("settings").required(),
   attributes: Joi.object().keys({
-    organization_name: Joi.string().max(255),
-    phone_number: Joi.string().max(20),
-    email: Joi.string().email(),
-    password: Joi.string().min(6).max(100),
-    next_allowed_assessment_date: Joi.date().iso().allow(null),
-  }),
-};
-
-// Schema for user self-update (users can only update certain fields)
-const userSelfUpdateDataSchema = {
-  type: Joi.string().valid("users").required(),
-  attributes: Joi.object().keys({
-    organization_name: Joi.string().max(255),
-    phone_number: Joi.string().max(20),
-    email: Joi.string().email(),
-    password: Joi.string().min(6).max(100),
+    key: Joi.string().max(255),
+    value: Joi.object(),
   }),
 };
 
@@ -104,7 +80,7 @@ module.exports = {
     headers: Joi.object().keys({}).unknown(true),
     body: Joi.object()
       .keys({
-        data: Joi.object().keys(userDataSchema).required(),
+        data: Joi.object().keys(settingDataSchema).required(),
       })
       .options({ abortEarly: false }),
   },
@@ -112,7 +88,7 @@ module.exports = {
     headers: Joi.object().keys({}).unknown(true),
     body: Joi.object()
       .keys({
-        data: Joi.object().keys(userUpdateDataSchema).required(),
+        data: Joi.object().keys(settingUpdateDataSchema).required(),
       })
       .options({ abortEarly: false }),
   },
@@ -127,19 +103,5 @@ module.exports = {
     body: Joi.object().keys({}).length(0).messages({
       'object.length': 'GET requests should not contain a body'
     }),
-  },
-  selfUpdate: {
-    headers: Joi.object().keys({}).unknown(true),
-    body: Joi.object()
-      .keys({
-        data: Joi.object().keys(userSelfUpdateDataSchema).required(),
-      })
-      .options({ abortEarly: false }),
-  },
-  getOwnProfile: {
-    query: Joi.object().keys({}).unknown(false),
-    body: Joi.object().keys({}).length(0).messages({
-      'object.length': 'GET requests should not contain a body'
-    }),
-  },
+  }
 };

@@ -88,9 +88,85 @@ const requireUser = (req, res, next) => {
   next();
 };
 
+/**
+ * Optional authentication middleware
+ * Attaches user info if token is provided and valid, but doesn't require it
+ */
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      // No token provided, continue without user info
+      req.userId = null;
+      req.userRole = null;
+      return next();
+    }
+
+    // Try to verify token
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    req.userId = decoded.id;
+    req.userRole = decoded.role;
+    
+    next();
+  } catch (error) {
+    // Invalid token, continue without user info
+    req.userId = null;
+    req.userRole = null;
+    next();
+  }
+};
+
+/**
+ * SSE-specific authentication middleware
+ * Supports tokens from query parameters (for browser SSE connections) or Authorization header
+ */
+const authenticateSSE = async (req, res, next) => {
+  try {
+    // Try query parameter first (common for SSE)
+    let token = req.query.token;
+    
+    // Fall back to Authorization header
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      token = authHeader && authHeader.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({ 
+        errors: [{
+          status: '401',
+          title: 'Unauthorized',
+          detail: 'No token provided'
+        }]
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    
+    // Add user info to request
+    req.userId = decoded.id;
+    req.userRole = decoded.role; // 'user', 'admin', or 'super_admin'
+    
+    next();
+  } catch (error) {
+    return res.status(401).json({ 
+      errors: [{
+        status: '401',
+        title: 'Unauthorized',
+        detail: 'Invalid or expired token'
+      }]
+    });
+  }
+};
+
 module.exports = {
   authenticate,
+  authenticateSSE,
   requireAdmin,
   requireSuperAdmin,
-  requireUser
+  requireUser,
+  optionalAuthenticate
 };

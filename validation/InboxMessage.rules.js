@@ -2,53 +2,57 @@ const Joi = require("joi");
 
 const ALLOWED_FIELDS = [
   "id",
-  "organization_name",
-  "phone_number",
-  "email",
-  "next_allowed_assessment_date",
+  "sent_by_user_id",
+  "sent_by_admin_id",
+  "sent_by_super_admin_id",
+  "type",
+  "payload",
+  "status",
   "created_at",
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = [
-  "organization_name",
-  "email",
-  "next_allowed_assessment_date",
-  "created_at",
-  "updated_at"
-];
+const ALLOWED_SORT_FIELDS = ["type", "status", "created_at", "updated_at"];
 
-const userDataSchema = {
-  type: Joi.string().valid("users").required(),
+const MESSAGE_TYPES = ['contact_us', 'retake_request', 'support_request', 'bug_report', 'result_feedback'];
+
+const inboxMessageDataSchema = {
+  type: Joi.string().valid("inbox_messages").required(),
   attributes: Joi.object()
     .keys({
-      organization_name: Joi.string().max(255).required(),
-      phone_number: Joi.string().max(20).required(),
-      email: Joi.string().email().required(),
-      password: Joi.string().min(6).max(100).required(),
+      sent_by_user_id: Joi.string().uuid().allow(null),
+      sent_by_admin_id: Joi.string().uuid().allow(null),
+      sent_by_super_admin_id: Joi.string().uuid().allow(null),
+      type: Joi.string().valid(...MESSAGE_TYPES).required(),
+      payload: Joi.object().allow(null).default({}),
+      status: Joi.string().valid('unresolved', 'resolved').allow(null),
     })
-    .required(),
+    .custom((value, helpers) => {
+      // Ensure at least one sender is specified
+      const { sent_by_user_id, sent_by_admin_id, sent_by_super_admin_id } = value;
+      const senderCount = [sent_by_user_id, sent_by_admin_id, sent_by_super_admin_id].filter(Boolean).length;
+      
+      if (senderCount === 0) {
+        return helpers.error('object.atLeastOneSender');
+      }
+      
+      return value;
+    }, "sender validation")
+    .required()
+    .messages({
+      'object.atLeastOneSender': 'At least one sender must be specified (sent_by_user_id, sent_by_admin_id, or sent_by_super_admin_id)',
+    }),
 };
 
-const userUpdateDataSchema = {
-  type: Joi.string().valid("users").required(),
+const inboxMessageUpdateDataSchema = {
+  type: Joi.string().valid("inbox_messages").required(),
   attributes: Joi.object().keys({
-    organization_name: Joi.string().max(255),
-    phone_number: Joi.string().max(20),
-    email: Joi.string().email(),
-    password: Joi.string().min(6).max(100),
-    next_allowed_assessment_date: Joi.date().iso().allow(null),
-  }),
-};
-
-// Schema for user self-update (users can only update certain fields)
-const userSelfUpdateDataSchema = {
-  type: Joi.string().valid("users").required(),
-  attributes: Joi.object().keys({
-    organization_name: Joi.string().max(255),
-    phone_number: Joi.string().max(20),
-    email: Joi.string().email(),
-    password: Joi.string().min(6).max(100),
+    sent_by_user_id: Joi.string().uuid().allow(null),
+    sent_by_admin_id: Joi.string().uuid().allow(null),
+    sent_by_super_admin_id: Joi.string().uuid().allow(null),
+    type: Joi.string().valid(...MESSAGE_TYPES),
+    payload: Joi.object().allow(null),
+    status: Joi.string().valid('unresolved', 'resolved').allow(null),
   }),
 };
 
@@ -72,7 +76,10 @@ const getAllQuerySchema = Joi.object()
 
     filter: Joi.object().pattern(
       Joi.string().valid(...ALLOWED_FIELDS),
-      Joi.string().max(100)
+      Joi.alternatives().try(
+        Joi.string().max(100),
+        Joi.object()
+      )
     ),
 
     sort: Joi.string().custom((value, helpers) => {
@@ -104,7 +111,7 @@ module.exports = {
     headers: Joi.object().keys({}).unknown(true),
     body: Joi.object()
       .keys({
-        data: Joi.object().keys(userDataSchema).required(),
+        data: Joi.object().keys(inboxMessageDataSchema).required(),
       })
       .options({ abortEarly: false }),
   },
@@ -112,7 +119,7 @@ module.exports = {
     headers: Joi.object().keys({}).unknown(true),
     body: Joi.object()
       .keys({
-        data: Joi.object().keys(userUpdateDataSchema).required(),
+        data: Joi.object().keys(inboxMessageUpdateDataSchema).required(),
       })
       .options({ abortEarly: false }),
   },
@@ -127,19 +134,5 @@ module.exports = {
     body: Joi.object().keys({}).length(0).messages({
       'object.length': 'GET requests should not contain a body'
     }),
-  },
-  selfUpdate: {
-    headers: Joi.object().keys({}).unknown(true),
-    body: Joi.object()
-      .keys({
-        data: Joi.object().keys(userSelfUpdateDataSchema).required(),
-      })
-      .options({ abortEarly: false }),
-  },
-  getOwnProfile: {
-    query: Joi.object().keys({}).unknown(false),
-    body: Joi.object().keys({}).length(0).messages({
-      'object.length': 'GET requests should not contain a body'
-    }),
-  },
+  }
 };
