@@ -1,9 +1,11 @@
 const db = require('../models');
 const Result = db.results;
+const User = db.user;
 const ResultSerializer = require( "../serializer/Result.serializer.js");
 const ResultInlineSerializer = require( "../serializer/Result.inline.serializer.js");
 const { createCrudOperations } = require( "../utils/crudOperations.js");
 const NotFoundError = require( "../error/exception/NotFound.js");
+const BusinessError = require("../error/BusinessError");
 const resultService = require('../services/resultService');
 
 const allowedFields = [
@@ -46,6 +48,30 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
+    const userId = req.body.user_id;
+    
+    // Validate user exists and check next_allowed_assessment_date
+    const user = await User.findByPk(userId);
+    
+    if (!user) {
+      throw new NotFoundError("User not found", "User");
+    }
+    
+    // Check if user is allowed to submit a result
+    if (user.next_allowed_assessment_date !== null) {
+      const currentDate = new Date();
+      const nextAllowedDate = new Date(user.next_allowed_assessment_date);
+      
+      if (currentDate < nextAllowedDate) {
+        const businessError = new BusinessError(403, "Forbidden");
+        businessError.addError(
+          'attributes.user_id', 
+          `You are not allowed to submit a result until ${nextAllowedDate.toISOString()}`
+        );
+        throw businessError;
+      }
+    }
+    
     const newResult = await Result.create(req.body);
     let serializedData = ResultSerializer.serialize(newResult);
     
