@@ -3,7 +3,8 @@ const { createInlineSerializer } = require('../utils/inlineSerializer');
 const CategoryInlineSerializer = createInlineSerializer('category', {
   attributes: [
     'name',
-    'name_fr', 
+    'name_fr',
+    'color',
     'description', 
     'created_at', 
     'updated_at', 

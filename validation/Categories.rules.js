@@ -4,12 +4,13 @@ const ALLOWED_FIELDS = [
   "id",
   "name",
   "name_fr",
+  "color",
   "description",
   "created_at",
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = ["name", "name_fr", "description", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["name", "name_fr", "color", "description", "created_at", "updated_at"];
 
 const categoryDataSchema = {
   type: Joi.string().valid("categories").required(),
@@ -17,6 +18,7 @@ const categoryDataSchema = {
     .keys({
       name: Joi.string().max(255).required(),
       name_fr: Joi.string().max(255).allow(null),
+      color: Joi.string().max(50).allow(null).optional(),
       description: Joi.string().max(1000).allow(null),
     })
     .required(),
@@ -27,6 +29,7 @@ const categoryUpdateDataSchema = {
   attributes: Joi.object().keys({
     name: Joi.string().max(255),
     name_fr: Joi.string().max(255).allow(null),
+    color: Joi.string().max(50).allow(null).optional(),
     description: Joi.string().max(1000).allow(null),
   }),
 };

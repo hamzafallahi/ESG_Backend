@@ -11,6 +11,7 @@ const allowedFields = [
   "id",
   "name",
   "name_fr",
+  "color",
   "description",
   "created_at",
   "updated_at",
