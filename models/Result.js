@@ -86,7 +86,10 @@ module.exports = (sequelize, type) => {
               sent_by_admin_id: null,
               sent_by_super_admin_id: null,
               type: 'result_feedback',
-              payload: { result_id: result.id },
+              payload: { 
+                result_id: result.id,
+                global_feedback: result.global_feedback
+              },
               status: null
             });
             
