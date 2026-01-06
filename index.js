@@ -7,6 +7,7 @@ const routes = require('./routes');
 const errorHandler = require("./middleware/errorHandler");
 const cors = require("cors");
 const app = express();
+const setupSwagger = require("./config/swagger");
 
 env.config();
 
@@ -31,6 +32,11 @@ app.use('/api/v1', routes);
 app.get("/docs", function (req, res) {
   res.sendFile(path.join(__dirname, "doc", "index.html"));
 });
+
+if (process.env.NODE_ENV !== "production") {
+  setupSwagger(app);
+}
+
 
 app.use(errorHandler);
 

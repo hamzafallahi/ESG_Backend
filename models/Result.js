@@ -79,7 +79,7 @@ module.exports = (sequelize, type) => {
         }
         
         // Create result_feedback inbox message and notify admins
-        if (user && InboxMessage) {
+        if (user && InboxMessage && (result.global_feedback && result.global_feedback.trim() !== '')) {
           try {
             const inboxMessage = await InboxMessage.create({
               sent_by_user_id: result.user_id,

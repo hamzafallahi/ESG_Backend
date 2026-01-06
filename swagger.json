@@ -1,0 +1,1353 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PAM Accounting API",
+    "description": "API for managing PAM SOA (accounting reviews), accounting reminders, and accounting data records",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API Version 1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "accounting-reviews",
+      "description": "Operations related to PAM SOA accounting reviews"
+    },
+    {
+      "name": "accounting-reminders",
+      "description": "Operations related to accounting reminders"
+    },
+    {
+      "name": "accounting-records",
+      "description": "Operations related to accounting data records loading and filtering"
+    },
+    {
+      "name": "pool-owners",
+      "description": "Operations related to pool owners"
+    }
+  ],
+  "paths": {
+    "/accounting-reviews": {
+      "get": {
+        "tags": ["accounting-reviews"],
+        "summary": "Get all PAM SOA records",
+        "description": "Retrieve PAM SOA list with pagination, filtering, sorting, and field selection.",
+        "parameters": [
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-based)",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to include in response. Allowed: soa_id,sap_id,sap_period_type,sap_year,loc_id,rp_id,soa_status,soa_confirmdate,soa_confirmedfrom,soa_comment,soa_action,sap_period",
+            "required": false,
+            "schema": { "type": "string", "example": "soa_id,sap_id,soa_status" }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Comma-separated fields to sort by. Use '-' for descending. Allowed: soa_id,sap_id,sap_period_type,sap_year,loc_id,rp_id,soa_status,soa_confirmdate,soa_confirmedfrom,soa_comment,soa_action,sap_period",
+            "required": false,
+            "schema": { "type": "string", "example": "soa_status,-sap_year" }
+          },
+          {
+            "name": "filter[soa_id]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[sap_id]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[sap_period_type]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[sap_year]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[loc_id]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[rp_id]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[soa_status]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[soa_confirmdate]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[soa_confirmedfrom]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[soa_comment]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[soa_action]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[sap_period]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PAM SOA list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PamSoa" }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "object",
+                          "properties": {
+                            "page_number": { "type": "integer" },
+                            "page_size": { "type": "integer" },
+                            "total_count": { "type": "integer" },
+                            "total_pages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "post": {
+        "tags": ["accounting-reviews"],
+        "summary": "Create a PAM SOA record",
+        "description": "Create a new PAM SOA entry. The server will set soa_confirmdate to now.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "PAM_SOA" },
+                      "attributes": { "$ref": "#/components/schemas/PamSoaCreateAttributes" }
+                    },
+                    "required": ["type", "attributes"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "PAM SOA created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-reviews/{pam_soa_id}": {
+      "get": {
+        "tags": ["accounting-reviews"],
+        "summary": "Get a PAM SOA by id",
+        "parameters": [
+          { "name": "pam_soa_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "PAM SOA retrieved",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["accounting-reviews"],
+        "summary": "Update a PAM SOA",
+        "parameters": [
+          { "name": "pam_soa_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "PAM_SOA" },
+                      "attributes": { "$ref": "#/components/schemas/PamSoaUpdateAttributes" }
+                    },
+                    "required": ["type", "attributes"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PAM SOA updated successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["accounting-reviews"],
+        "summary": "Delete a PAM SOA",
+        "parameters": [
+          { "name": "pam_soa_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Deleted successfully" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-reviews/{pam_soa_id}/actions/review": {
+      "post": {
+        "tags": ["accounting-reviews"],
+        "summary": "Mark a PAM SOA as partially incorrect",
+        "description": "Marks a PAM SOA record as partially incorrect (sets status to 2). Only records with status different than 1 can be marked as partially incorrect. The soa_confirmedfrom field is automatically set from the authenticated user's email.",
+        "parameters": [
+          {
+            "name": "pam_soa_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "PAM_SOA" },
+                      "attributes": {
+                        "type": "object",
+                        "properties": {
+                          "soa_comment": { "type": "string", "maxLength": 512 },
+                          "soa_action": { "type": "string", "maxLength": 512 }
+                        },
+                        "required": ["soa_comment", "soa_action"]
+                      }
+                    },
+                    "required": ["type", "attributes"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PAM SOA marked as partially incorrect successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-reminders": {
+      "get": {
+        "tags": ["accounting-reminders"],
+        "summary": "Get all reminders",
+        "description": "Retrieve reminders list with pagination, filtering, sorting, and field selection.",
+        "parameters": [
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-based)",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to include in response. Allowed: id,from,to,status,template_data,created_at,updated_at",
+            "required": false,
+            "schema": { "type": "string", "example": "id,status,template_data" }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Comma-separated fields to sort by. Use '-' for descending. Allowed: id,from,to,status,template_data,created_at,updated_at",
+            "required": false,
+            "schema": { "type": "string", "example": "status,-created_at" }
+          },
+          {
+            "name": "filter[id]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[from]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[to]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[status]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["pending", "delivered", "failed"], "maxLength": 100 }
+          },
+          {
+            "name": "filter[template_data]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[created_at]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "filter[updated_at]",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reminders list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/AccountingReminder" }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "object",
+                          "properties": {
+                            "page_number": { "type": "integer" },
+                            "page_size": { "type": "integer" },
+                            "total_count": { "type": "integer" },
+                            "total_pages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "post": {
+        "tags": ["accounting-reminders"],
+        "summary": "Create a reminder",
+        "description": "Create a new reminder entry.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "accounting_reminders" },
+                      "attributes": { "$ref": "#/components/schemas/AccountingReminderCreateAttributes" }
+                    },
+                    "required": ["type", "attributes"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reminder created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountingReminderResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-reviews/{pam_soa_id}/actions/reset": {
+      "post": {
+        "tags": ["accounting-reviews"],
+        "summary": "Reset a PAM SOA to initial state",
+        "description": "Resets a PAM SOA record to its initial state (status 0). Only records with status 1 or 2 can be reset. This action clears soa_comment, soa_action, soa_confirmdate, and soa_confirmedfrom fields.",
+        "parameters": [
+          {
+            "name": "pam_soa_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "PAM_SOA" },
+                      "attributes": {
+                        "type": "object",
+                        "properties": {
+                          "reason": { "type": "string", "maxLength": 512, "nullable": true }
+                        }
+                      }
+                    },
+                    "required": ["type", "attributes"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PAM SOA reset successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-reviews/{pam_soa_id}/actions/confirm": {
+      "post": {
+        "tags": ["accounting-reviews"],
+        "summary": "Confirm a PAM SOA",
+        "description": "Confirms a PAM SOA record (sets status to 1 and updates confirmedfrom field). The soa_confirmedfrom field is automatically set from the authenticated user's email. Pool owners cannot confirm records with status 2 (partially incorrect) unless they are admins or location admins.",
+        "parameters": [
+          {
+            "name": "pam_soa_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PAM SOA confirmed successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-reminders/{reminder_id}": {
+      "get": {
+        "tags": ["accounting-reminders"],
+        "summary": "Get a reminder by id",
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": { 
+              "type": "string", 
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "description": "UUID format (e.g., 2625641a-b3a3-4f7d-8ef4-5e3128077aab)"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reminder retrieved",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountingReminderResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["accounting-reminders"],
+        "summary": "Update a reminder",
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": { 
+              "type": "string", 
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "description": "UUID format (e.g., 2625641a-b3a3-4f7d-8ef4-5e3128077aab)"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "accounting_reminders" },
+                      "attributes": { "$ref": "#/components/schemas/AccountingReminderUpdateAttributes" }
+                    },
+                    "required": ["type", "attributes"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reminder updated successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountingReminderResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["accounting-reminders"],
+        "summary": "Delete a reminder",
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": { 
+              "type": "string", 
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "description": "UUID format (e.g., 2625641a-b3a3-4f7d-8ef4-5e3128077aab)"
+            }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Deleted successfully" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-records": {
+      "get": {
+        "tags": ["accounting-records"],
+        "summary": "Get accounting data records",
+        "description": "Retrieve accounting data with pagination, filtering, and format options (hierarchical or JSON API). Supports multiple view types.",
+        "parameters": [
+          {
+            "name": "filter[periodStartDate]",
+            "in": "query",
+            "required": false,
+            "description": "Period start date filter (ISO date format)",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "filter[periodFinishDate]",
+            "in": "query",
+            "required": false,
+            "description": "Period end date filter (ISO date format)",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "filter[sapYear]",
+            "in": "query",
+            "description": "SAP year filter",
+            "schema": { "type": "integer", "minimum": 2000, "maximum": 3000 }
+          },
+          {
+            "name": "filter[sapPeriod]",
+            "in": "query",
+            "description": "SAP period filter",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "filter[sapPeriodType]",
+            "in": "query",
+            "description": "SAP period type filter (0 = weekly, 1 = monthly). Defaults to 1 if not provided.",
+            "schema": { "type": "integer", "enum": [0, 1], "default": 1 }
+          },
+          {
+            "name": "filter[locSapPeriod]",
+            "in": "query",
+            "description": "Location SAP period filter (0 or 1). Defaults to 1 if not provided.",
+            "schema": { "type": "integer", "enum": [0, 1], "default": 1 }
+          },
+          {
+            "name": "filter[locationID]",
+            "in": "query",
+            "description": "Location ID filter (single integer or comma-separated values)",
+            "schema": { 
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
+              ]
+            }
+          },
+          {
+            "name": "filter[resourcePoolID]",
+            "in": "query",
+            "description": "Resource pool ID filter (single integer or comma-separated values)",
+            "schema": { 
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
+              ]
+            }
+          },
+          {
+            "name": "filter[resourcePoolLabel]",
+            "in": "query",
+            "description": "Resource pool name/label filter",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "filter[resourceName]",
+            "in": "query",
+            "description": "Resource name filter",
+            "schema": { "type": "string", "maxLength": 1000 }
+          },
+          {
+            "name": "filter[costCenter]",
+            "in": "query",
+            "description": "Cost center filter",
+            "schema": { "type": "string", "maxLength": 1000 }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of records per page",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 10000, "default": 10 }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-based)",
+            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "description": "Response format",
+            "schema": { "type": "string", "enum": ["hierarchical", "jsonapi"], "default": "hierarchical" }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "description": "View type for hierarchical format",
+            "schema": { "type": "string", "enum": ["workstep-resources", "resources", "workstep-projects", "pools"], "default": "workstep-resources" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved accounting data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/AccountingDataResponse" },
+                    { "$ref": "#/components/schemas/HierarchicalAccountingDataResponse" }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/accounting-records/filter-options": {
+      "get": {
+        "tags": ["accounting-records"],
+        "summary": "Get filter options for accounting data",
+        "description": "Retrieve available filter options based on user authentication including locations, resource pools, cost centers, and SAP periods.",
+        "parameters": [
+          {
+            "name": "sapYear",
+            "in": "query",
+            "required": false,
+            "description": "SAP year to filter available options",
+            "schema": { "type": "integer", "minimum": 2000, "maximum": 3000 }
+          },
+          {
+            "name": "sapPeriod",
+            "in": "query",
+            "required": false,
+            "description": "SAP period to filter available options",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "locationID",
+            "in": "query",
+            "required": false,
+            "description": "Location ID filter (single integer or comma-separated values)",
+            "schema": { 
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
+              ]
+            }
+          },
+          {
+            "name": "resourcePoolID",
+            "in": "query",
+            "required": false,
+            "description": "Resource pool ID filter (single integer or comma-separated values)",
+            "schema": { 
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
+              ]
+            }
+          },
+          {
+            "name": "costCenter",
+            "in": "query",
+            "required": false,
+            "description": "Cost center filter",
+            "schema": { "type": "string", "maxLength": 1000 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved filter options",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccountingDataFilterOptionsResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/pool-owners": {
+      "get": {
+        "tags": ["pool-owners"],
+        "summary": "Get all pool owners",
+        "description": "Retrieve pool owners list with pagination and optional pool inclusion, filtered by SAP parameters and optional location.",
+        "parameters": [
+          {
+            "name": "page_number",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated list of relationships to include. Allowed: pools",
+            "required": false,
+            "schema": { "type": "string", "example": "pools" }
+          },
+          {
+            "name": "sap_period",
+            "in": "query",
+            "description": "SAP period",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "sap_year",
+            "in": "query",
+            "description": "SAP year",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "sap_period_type",
+            "in": "query",
+            "description": "SAP period type",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "soa_status",
+            "in": "query",
+            "description": "SOA status",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "description": "Comma-separated list of location names to filter by (e.g., 'Shenzhen,Tunis')",
+            "required": false,
+            "schema": { "type": "string", "example": "Shenzhen,Tunis" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pool owners list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PoolOwner" }
+                    },
+                    "included": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Pool" },
+                      "description": "Included pools when include=pools is specified"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page_number": { "type": "integer" },
+                        "page_size": { "type": "integer" },
+                        "total_count": { "type": "integer" },
+                        "total_pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PamSoa": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "PAM_SOA" },
+          "id": { "type": "string", "example": "123" },
+          "attributes": { "$ref": "#/components/schemas/PamSoaAttributes" }
+        }
+      },
+      "PamSoaResponse": {
+        "type": "object",
+        "properties": { "data": { "$ref": "#/components/schemas/PamSoa" } }
+      },
+      "PamSoaAttributes": {
+        "type": "object",
+        "properties": {
+          "soa_id": { "type": "integer" },
+          "sap_id": { "type": "integer" },
+          "sap_period_type": { "type": "integer", "enum": [1, 2] },
+          "sap_year": { "type": "integer" },
+          "loc_id": { "type": "integer" },
+          "rp_id": { "type": "integer" },
+          "soa_status": { "type": "integer", "enum": [0, 1, 2, 3] },
+          "soa_confirmdate": { "type": "string", "format": "date-time", "nullable": true },
+          "soa_confirmedfrom": { "type": "string", "maxLength": 50, "nullable": true },
+          "soa_comment": { "type": "string", "maxLength": 512, "nullable": true },
+          "soa_action": { "type": "string", "maxLength": 512, "nullable": true },
+          "sap_period": { "type": "integer", "nullable": true },
+          "reason": { "type": "string", "maxLength": 512, "nullable": true }
+        }
+      },
+      "PamSoaCreateAttributes": {
+        "type": "object",
+        "properties": {
+          "sap_id": { "type": "integer" },
+          "sap_period_type": { "type": "integer", "enum": [1, 2] },
+          "sap_year": { "type": "integer" },
+          "loc_id": { "type": "integer" },
+          "rp_id": { "type": "integer" },
+          "soa_status": { "type": "integer", "enum": [0], "default": 0 },
+          "soa_confirmedfrom": { "type": "string", "maxLength": 50, "nullable": true },
+          "soa_comment": { "type": "string", "maxLength": 512, "nullable": true },
+          "soa_action": { "type": "string", "maxLength": 512, "nullable": true },
+          "sap_period": { "type": "integer", "nullable": true },
+          "reason": { "type": "string", "maxLength": 512, "nullable": true }
+        },
+        "required": ["sap_id", "sap_period_type", "sap_year", "loc_id", "rp_id"]
+      },
+      "PamSoaUpdateAttributes": {
+        "type": "object",
+        "properties": {
+          "soa_status": { "type": "integer", "enum": [0, 1, 2, 3] },
+          "soa_confirmedfrom": { "type": "string", "maxLength": 50, "nullable": true },
+          "soa_comment": { "type": "string", "maxLength": 512, "nullable": true },
+          "soa_action": { "type": "string", "maxLength": 512, "nullable": true },
+          "reason": { "type": "string", "maxLength": 512, "nullable": true }
+        },
+        "required": ["soa_status"]
+      },
+      "AccountingReminder": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "accounting_reminders" },
+          "id": { "type": "string", "example": "123" },
+          "attributes": { "$ref": "#/components/schemas/AccountingReminderAttributes" }
+        }
+      },
+      "AccountingReminderResponse": {
+        "type": "object",
+        "properties": { "data": { "$ref": "#/components/schemas/AccountingReminder" } }
+      },
+      "AccountingReminderAttributes": {
+        "type": "object",
+        "properties": {
+          "id": { 
+            "type": "string", 
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "from": { "type": "string", "maxLength": 250 },
+          "to": { "type": "string", "maxLength": 250 },
+          "status": { "type": "string", "enum": ["pending", "delivered", "failed"] },
+          "template_data": { "type": "string", "maxLength": 255, "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AccountingReminderCreateAttributes": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "maxLength": 250 },
+          "template_data": { "type": "object", "nullable": true }
+        },
+        "required": ["to"]
+      },
+      "AccountingReminderUpdateAttributes": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "maxLength": 250, "nullable": true },
+          "status": { "type": "string", "enum": ["pending", "delivered", "failed"] },
+          "template_data": { "type": "object", "nullable": true }
+        },
+        "required": ["status"]
+      },
+      "AccountingData": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "ACCOUNTING_DATA" },
+          "id": { "type": "string", "example": "123" },
+          "attributes": { "$ref": "#/components/schemas/AccountingDataAttributes" }
+        }
+      },
+      "AccountingDataAttributes": {
+        "type": "object",
+        "properties": {
+          "ResourcePool": { "type": "string" },
+          "res_id": { "type": "integer" },
+          "loc_id": { "type": "integer" },
+          "Resource": { "type": "string" },
+          "IsExtern": { "type": "integer" },
+          "CostCenter": { "type": "string" },
+          "Work": { "type": "number", "format": "float", "description": "Planned effort (work hours)" },
+          "AWork": { "type": "number", "format": "float", "description": "Accounted effort (actual work hours)" },
+          "RegWork": { "type": "number", "format": "float", "description": "Regular working time" },
+          "GLAZ": { "type": "number", "format": "float", "description": "GLAZ hours" },
+          "RegWork_Glaz": { "type": "number", "format": "float", "description": "RegWork - GLAZ" },
+          "A_Work_RegWork_Glaz": { "type": "number", "format": "float", "description": "AWork - RegWork_Glaz" },
+          "Start": { "type": "string", "format": "date-time" },
+          "Finish": { "type": "string", "format": "date-time" },
+          "Project": { "type": "string" },
+          "PSP": { "type": "string" },
+          "Workpackage": { "type": "string" },
+          "Workstep": { "type": "string" },
+          "Anonym": { "type": "string" },
+          "SoaStatus": { "type": "integer", "description": "SOA status (0=Not Yet Processed, 1=Confirmed, 2=Partially Confirmed)" },
+          "SoaId": { "type": "integer", "description": "SOA ID reference" }
+        }
+      },
+      "AccountingDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AccountingData" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "pageNumber": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "HierarchicalAccountingDataItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Unique identifier for the row" },
+          "name": { "type": "string", "description": "Pool name (for pool-level rows)" },
+          "ressource": { "type": "string", "description": "Resource or pool display name (for workstep-resources view)" },
+          "resourcePool": { "type": "string", "description": "Resource pool display name (for pools/resources views)" },
+          "project": { "type": "string", "description": "Project name (for project rows in workstep-projects view)" },
+          "type": { "type": "string", "description": "Resource type: '1' for external, '0' for internal (only present for resource rows)" },
+          "pspElement": { "type": "string", "description": "PSP element" },
+          "workPackage": { "type": "string", "description": "Work package name" },
+          "workStep": { "type": "string", "description": "Work step name" },
+          "plannedEfforts": { "type": "string", "description": "Planned effort hours (formatted to 2 decimals)" },
+          "plannedEffortsPercentage": { "type": "string", "description": "Percentage of planned efforts relative to working time" },
+          "workingTimeGlaz": { "type": "string", "description": "Working time with GLAZ breakdown (format: RegWork - GLAZ = RegWork_Glaz)" },
+          "workingTime": { "type": "string", "description": "Regular working time (formatted to 2 decimals)" },
+          "accountedEfforts": { "type": "string", "description": "Accounted effort hours (formatted to 2 decimals)" },
+          "accountedEffortsDifference": { "type": "string", "description": "Difference between accounted efforts and working time minus GLAZ" },
+          "status": { "type": "integer", "description": "SOA status (0=Not Yet Processed, 1=Confirmed, 2=Partially Confirmed)" },
+          "comment": { "type": "string", "description": "Status label text" },
+          "hasLink": { "type": "boolean", "description": "Whether the row has a link to SOA details (true for status 2)" },
+          "soaId": { "type": "integer", "description": "SOA ID reference" },
+          "soaConfirmedFrom": { "type": "string", "description": "Email of user who confirmed the SOA" },
+          "icon": { "type": "string", "description": "Icon identifier (e.g., 'layers', 'user', 'briefcase')" },
+          "iconColor": { "type": "string", "description": "Color for the icon (e.g., '#49C94F', 'orange', 'gray')" },
+          "tags": {
+            "type": "array",
+            "description": "Array of tag objects for date range display",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string" },
+                "color": { "type": "string" }
+              }
+            }
+          },
+          "subRows": {
+            "type": "array",
+            "description": "Nested child rows for hierarchical structure",
+            "items": { "$ref": "#/components/schemas/HierarchicalAccountingDataItem" }
+          }
+        }
+      },
+      "HierarchicalAccountingDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HierarchicalAccountingDataItem" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "pageNumber": { "type": "integer" },
+              "totalPages": { "type": "integer" },
+              "dateRange": { "type": "string" }
+            }
+          }
+        }
+      },
+      "AccountingDataFilterOptionsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "userRole": { 
+                "type": "integer",
+                "description": "User's role level (10=Admin, 20=Location Owner, 30=Pool Owner)"
+              },
+              "locations": {
+                "type": "array",
+                "description": "Available locations based on user access and filters",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "description": "Location ID" },
+                    "name": { "type": "string", "description": "Location name" }
+                  }
+                }
+              },
+              "resourcePools": {
+                "type": "array",
+                "description": "Available resource pools based on user access and filters",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "description": "Resource pool ID" },
+                    "name": { "type": "string", "description": "Resource pool name" }
+                  }
+                }
+              },
+              "sapPeriods": {
+                "type": "array",
+                "description": "Available SAP periods (last 10 months) based on user access and filters",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "periodType": { "type": "integer", "description": "SAP period type" },
+                    "year": { "type": "integer", "description": "SAP year" },
+                    "period": { "type": "integer", "description": "SAP period (1-12 for monthly)" },
+                    "acFrom": { "type": "string", "format": "date", "description": "Period start date" },
+                    "acTo": { "type": "string", "format": "date", "description": "Period end date" }
+                  }
+                }
+              },
+              "costCenters": {
+                "type": "array",
+                "description": "Available cost centers based on user access and filters",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "description": "Cost center ID" },
+                    "name": { "type": "string", "description": "Cost center name" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PoolOwner": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "pool-owner" },
+          "id": { "type": "string", "example": "123" },
+          "attributes": { "$ref": "#/components/schemas/PoolOwnerAttributes" },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "pools": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "example": "pool" },
+                        "id": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PoolOwnerAttributes": {
+        "type": "object",
+        "properties": {
+          "user_email": { "type": "string", "format": "email" },
+          "user_name": { "type": "string" },
+          "rol_level": { "type": "integer" }
+        }
+      },
+      "Pool": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "example": "pool" },
+          "id": { "type": "string" },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "location": { "type": "string", "description": "Location name of the pool" }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": { "type": "string" },
+                "title": { "type": "string" },
+                "detail": { "type": "string" },
+                "code": { "type": "string" },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "pointer": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Validation errors or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme"
+      }
+    }
+  }
+}
+
+
