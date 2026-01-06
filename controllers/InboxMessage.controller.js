@@ -5,6 +5,7 @@ const InboxMessageInlineSerializer = require('../serializer/InboxMessage.inline.
 const { createCrudOperations } = require('../utils/crudOperations.js');
 const NotFoundError = require('../error/exception/NotFound.js');
 const BusinessError = require("../error/BusinessError");
+const { Op } = require('sequelize');
 
 const allowedFields = [
   "id",
@@ -136,14 +137,17 @@ const checkPendingRetakeRequest = async (req, res, next) => {
       where: {
         sent_by_user_id: userId,
         type: 'retake_request',
-        status: ['unresolved', null],
+        [Op.or]: [
+          { status: null },
+          { status: 'unresolved' }
+        ]
       },
       order: [['created_at', 'DESC']],
     });
     
     res.status(200).json({
       hasPendingRequest: !!pendingRequest,
-      pendingRequest: pendingRequest ? InboxMessageInlineSerializer(pendingRequest) : null,
+      pendingRequest: pendingRequest ? InboxMessageInlineSerializer.serialize(pendingRequest) : null,
     });
   } catch (error) {
     next(error);
