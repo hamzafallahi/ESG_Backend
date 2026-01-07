@@ -1,0 +1,2097 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ESG Backend API - Admin Routes",
+    "description": "API for ESG Assessment Platform - Admin and Super Admin endpoints for authentication and administration",
+    "version": "1.0.0",
+    "contact": {
+      "name": "ESG Backend Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API Version 1"
+    }
+  ],
+  "security": [
+    {
+      "adminBearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "admin-auth",
+      "description": "Admin and Super Admin authentication operations"
+    },
+    {
+      "name": "admins",
+      "description": "Admin management (Super Admin only)"
+    },
+    {
+      "name": "users",
+      "description": "User management (Admin/Super Admin)"
+    },
+    {
+      "name": "settings",
+      "description": "Settings management (Admin/Super Admin for write operations)"
+    }
+  ],
+  "paths": {
+    "/auth/admin/login": {
+      "post": {
+        "tags": ["admin-auth"],
+        "summary": "Admin/Super Admin login",
+        "description": "Authenticate an admin or super admin and receive a JWT token. The system first checks super_admin table, then admin table.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              },
+              "example": {
+                "email": "admin@example.com",
+                "password": "securePassword123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthResponse"
+                },
+                "example": {
+                  "data": {
+                    "type": "admins",
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "attributes": {
+                      "username": "admin_user",
+                      "email": "admin@example.com",
+                      "first_name": "John",
+                      "last_name": "Doe",
+                      "is_active": true,
+                      "role": "admin"
+                    }
+                  },
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials or account inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/admin/me": {
+      "get": {
+        "tags": ["admin-auth"],
+        "summary": "Get current admin/super admin",
+        "description": "Retrieve the currently authenticated admin or super admin's information",
+        "security": [{"adminBearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Current admin data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminResponse"
+                },
+                "example": {
+                  "data": {
+                    "type": "admins",
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "attributes": {
+                      "username": "admin_user",
+                      "email": "admin@example.com",
+                      "first_name": "John",
+                      "last_name": "Doe",
+                      "is_active": true,
+                      "role": "admin"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Admin not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admins": {
+      "get": {
+        "tags": ["admins"],
+        "summary": "Get all admins",
+        "description": "Retrieve a paginated list of all admins. **Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, username, email, first_name, last_name, is_active, created_by, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "username,email,first_name,last_name,is_active"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: username, email, first_name, last_name, is_active, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[username]",
+            "in": "query",
+            "description": "Filter by username",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[email]",
+            "in": "query",
+            "description": "Filter by email",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[is_active]",
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"]
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (creator, sent_messages, read_messages)",
+            "schema": {
+              "type": "string",
+              "example": "creator"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of admins",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Super Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admins"],
+        "summary": "Create a new admin",
+        "description": "Create a new admin account. **Super Admin only.** The created_by field is automatically set to the current super admin.",
+        "security": [{"adminBearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "admins",
+                  "attributes": {
+                    "username": "new_admin",
+                    "email": "newadmin@example.com",
+                    "password": "securePassword123",
+                    "first_name": "Jane",
+                    "last_name": "Smith",
+                    "is_active": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (username/email already exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "status": "400",
+                      "title": "Bad Request",
+                      "detail": "Username already exists",
+                      "source": {
+                        "pointer": "/data/attributes/username"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Super Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admins/{adminId}": {
+      "get": {
+        "tags": ["admins"],
+        "summary": "Get admin by ID",
+        "description": "Retrieve a specific admin by their UUID. **Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "adminId",
+            "in": "path",
+            "required": true,
+            "description": "Admin UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (creator, sent_messages, read_messages)",
+            "schema": {
+              "type": "string",
+              "example": "creator"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Super Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Admin not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["admins"],
+        "summary": "Update an admin",
+        "description": "Update an existing admin's information. **Super Admin only.** Password will be hashed automatically if provided.",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "adminId",
+            "in": "path",
+            "required": true,
+            "description": "Admin UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "admins",
+                  "attributes": {
+                    "first_name": "Updated",
+                    "last_name": "Name",
+                    "is_active": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Admin updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (username/email already exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Super Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Admin not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["admins"],
+        "summary": "Delete an admin",
+        "description": "Soft delete an admin account. **Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "adminId",
+            "in": "path",
+            "required": true,
+            "description": "Admin UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Admin deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Super Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Admin not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Get all users",
+        "description": "Retrieve a paginated list of all users. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, organization_name, phone_number, email, next_allowed_assessment_date, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "organization_name,email,phone_number"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: organization_name, email, next_allowed_assessment_date, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[organization_name]",
+            "in": "query",
+            "description": "Filter by organization name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[email]",
+            "in": "query",
+            "description": "Filter by email",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsersListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["users"],
+        "summary": "Create a new user",
+        "description": "Create a new user account. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "organization_name": "New Organization",
+                    "phone_number": "+1234567890",
+                    "email": "newuser@example.com",
+                    "password": "securePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (email already exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "status": "400",
+                      "title": "Bad Request",
+                      "detail": "Email already exists",
+                      "source": {
+                        "pointer": "/data/attributes/email"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Get user by ID",
+        "description": "Retrieve a specific user by their UUID. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "User UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["users"],
+        "summary": "Update a user",
+        "description": "Update an existing user's information. **Admin/Super Admin only.** Admins can set next_allowed_assessment_date.",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "User UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "organization_name": "Updated Organization",
+                    "next_allowed_assessment_date": "2026-02-01T00:00:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (email already exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["users"],
+        "summary": "Delete a user",
+        "description": "Soft delete a user account. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "User UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get all settings",
+        "description": "Retrieve a paginated list of all settings. Requires authentication.",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, key, value, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "key,value"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: key, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "key"
+            }
+          },
+          {
+            "name": "filter[key]",
+            "in": "query",
+            "description": "Filter by key",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["settings"],
+        "summary": "Create a new setting",
+        "description": "Create a new setting. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "settings",
+                  "attributes": {
+                    "key": "assessment_cooldown_days",
+                    "value": { "days": 30 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Setting created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (key already exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "status": "400",
+                      "title": "Bad Request",
+                      "detail": "Key already exists. Key must be unique",
+                      "source": {
+                        "pointer": "/data/attributes/key"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/{settingId}": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get setting by ID",
+        "description": "Retrieve a specific setting by its UUID.",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "settingId",
+            "in": "path",
+            "required": true,
+            "description": "Setting UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Setting details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["settings"],
+        "summary": "Update a setting by ID",
+        "description": "Update an existing setting. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "settingId",
+            "in": "path",
+            "required": true,
+            "description": "Setting UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "settings",
+                  "attributes": {
+                    "value": { "days": 60 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Setting updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (key already exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["settings"],
+        "summary": "Delete a setting",
+        "description": "Delete a setting by ID. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "settingId",
+            "in": "path",
+            "required": true,
+            "description": "Setting UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Setting deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/key/{key}": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get setting by key",
+        "description": "Retrieve a specific setting by its unique key.",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "description": "Setting key",
+            "schema": {
+              "type": "string"
+            },
+            "example": "assessment_cooldown_days"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Setting details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["settings"],
+        "summary": "Update a setting by key",
+        "description": "Update an existing setting by its key. **Admin/Super Admin only.**",
+        "security": [{"adminBearerAuth": []}],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "description": "Setting key",
+            "schema": {
+              "type": "string"
+            },
+            "example": "assessment_cooldown_days"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "settings",
+                  "attributes": {
+                    "value": { "days": 90 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Setting updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminLoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Admin email address"
+          },
+          "password": {
+            "type": "string",
+            "description": "Admin password"
+          }
+        }
+      },
+      "AdminAuthResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["admins", "super_admins"],
+                "description": "Resource type based on admin role"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "first_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "last_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["admin", "super_admin"],
+                    "description": "Admin role type"
+                  }
+                }
+              }
+            }
+          },
+          "token": {
+            "type": "string",
+            "description": "JWT authentication token"
+          }
+        }
+      },
+      "AdminResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "admin"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Unique username (3-50 characters)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "first_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "last_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "is_active": {
+                    "type": "boolean",
+                    "description": "Whether the admin account is active"
+                  },
+                  "created_by": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true,
+                    "description": "UUID of the super admin who created this admin"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "creator": {
+                    "type": "object",
+                    "description": "Super admin who created this admin",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "super_admin" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
+        }
+      },
+      "AdminsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "admin" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "username": { "type": "string" },
+                    "email": { "type": "string", "format": "email" },
+                    "first_name": { "type": "string", "nullable": true },
+                    "last_name": { "type": "string", "nullable": true },
+                    "is_active": { "type": "boolean" },
+                    "created_by": { "type": "string", "format": "uuid", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer", "description": "Total number of records" },
+              "page": { "type": "integer", "description": "Current page number" },
+              "pageSize": { "type": "integer", "description": "Number of items per page" },
+              "totalPages": { "type": "integer", "description": "Total number of pages" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "AdminCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["admins"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["username", "email", "password"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 50,
+                    "description": "Unique username"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Unique email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "Password (min 6 characters, will be hashed)"
+                  },
+                  "first_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true
+                  },
+                  "last_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true
+                  },
+                  "is_active": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether the admin account is active"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AdminUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["admins"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 50
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "New password (will be hashed)"
+                  },
+                  "first_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true
+                  },
+                  "last_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "HTTP status code"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Error title"
+                },
+                "detail": {
+                  "type": "string",
+                  "description": "Error detail message"
+                },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "pointer": {
+                      "type": "string",
+                      "description": "JSON pointer to the field that caused the error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "users"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string",
+                    "description": "Organization name"
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "description": "Phone number"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "next_allowed_assessment_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true,
+                    "description": "Date when user can take next assessment"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UsersListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "users" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "organization_name": { "type": "string" },
+                    "phone_number": { "type": "string" },
+                    "email": { "type": "string", "format": "email" },
+                    "next_allowed_assessment_date": { "type": "string", "format": "date-time", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer", "description": "Total number of records" },
+              "page": { "type": "integer", "description": "Current page number" },
+              "pageSize": { "type": "integer", "description": "Number of items per page" },
+              "totalPages": { "type": "integer", "description": "Total number of pages" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "UserCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["organization_name", "phone_number", "email", "password"],
+                "properties": {
+                  "organization_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Organization name"
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Phone number"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Unique email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "Password (min 6 characters, will be hashed)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["users"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "New password (will be hashed)"
+                  },
+                  "next_allowed_assessment_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true,
+                    "description": "Date when user can take next assessment (ISO 8601)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SettingResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "settings"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "Unique setting key"
+                  },
+                  "value": {
+                    "type": "object",
+                    "description": "Setting value (JSONB)"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SettingsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "settings" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string" },
+                    "value": { "type": "object" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer", "description": "Total number of records" },
+              "page": { "type": "integer", "description": "Current page number" },
+              "pageSize": { "type": "integer", "description": "Number of items per page" },
+              "totalPages": { "type": "integer", "description": "Total number of pages" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "SettingCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["settings"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["key", "value"],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Unique setting key"
+                  },
+                  "value": {
+                    "type": "object",
+                    "description": "Setting value (JSON object)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SettingUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["settings"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "value": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "adminBearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Admin/Super Admin JWT token obtained from /auth/admin/login"
+      }
+    }
+  }
+}

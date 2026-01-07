@@ -1,9 +1,12 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "PAM Accounting API",
-    "description": "API for managing PAM SOA (accounting reviews), accounting reminders, and accounting data records",
-    "version": "1.0.0"
+    "title": "ESG Backend API - User Routes",
+    "description": "API for ESG Assessment Platform - User facing endpoints for authentication, profile management, and assessment content (categories, sections, questions)",
+    "version": "1.0.0",
+    "contact": {
+      "name": "ESG Backend Support"
+    }
   },
   "servers": [
     {
@@ -18,931 +21,2241 @@
   ],
   "tags": [
     {
-      "name": "accounting-reviews",
-      "description": "Operations related to PAM SOA accounting reviews"
+      "name": "auth",
+      "description": "User authentication operations (signup, login, current user)"
     },
     {
-      "name": "accounting-reminders",
-      "description": "Operations related to accounting reminders"
+      "name": "profile",
+      "description": "User profile management operations"
     },
     {
-      "name": "accounting-records",
-      "description": "Operations related to accounting data records loading and filtering"
+      "name": "categories",
+      "description": "ESG assessment categories"
     },
     {
-      "name": "pool-owners",
-      "description": "Operations related to pool owners"
+      "name": "sections",
+      "description": "Sections within ESG categories"
+    },
+    {
+      "name": "questions",
+      "description": "Assessment questions within sections"
+    },
+    {
+      "name": "assessment-progress",
+      "description": "User assessment progress tracking"
+    },
+    {
+      "name": "results",
+      "description": "Assessment results"
+    },
+    {
+      "name": "result-categories",
+      "description": "Category-level assessment results"
+    },
+    {
+      "name": "result-sections",
+      "description": "Section-level assessment results"
+    },
+    {
+      "name": "inbox-actions",
+      "description": "User inbox actions (retake requests, contact us, bug reports, support)"
     }
   ],
   "paths": {
-    "/accounting-reviews": {
-      "get": {
-        "tags": ["accounting-reviews"],
-        "summary": "Get all PAM SOA records",
-        "description": "Retrieve PAM SOA list with pagination, filtering, sorting, and field selection.",
-        "parameters": [
-          {
-            "name": "page[size]",
-            "in": "query",
-            "description": "Number of items per page",
-            "required": false,
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
-          },
-          {
-            "name": "page[number]",
-            "in": "query",
-            "description": "Page number (0-based)",
-            "required": false,
-            "schema": { "type": "integer", "minimum": 0, "default": 0 }
-          },
-          {
-            "name": "fields",
-            "in": "query",
-            "description": "Comma-separated list of fields to include in response. Allowed: soa_id,sap_id,sap_period_type,sap_year,loc_id,rp_id,soa_status,soa_confirmdate,soa_confirmedfrom,soa_comment,soa_action,sap_period",
-            "required": false,
-            "schema": { "type": "string", "example": "soa_id,sap_id,soa_status" }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Comma-separated fields to sort by. Use '-' for descending. Allowed: soa_id,sap_id,sap_period_type,sap_year,loc_id,rp_id,soa_status,soa_confirmdate,soa_confirmedfrom,soa_comment,soa_action,sap_period",
-            "required": false,
-            "schema": { "type": "string", "example": "soa_status,-sap_year" }
-          },
-          {
-            "name": "filter[soa_id]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[sap_id]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[sap_period_type]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[sap_year]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[loc_id]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[rp_id]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[soa_status]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[soa_confirmdate]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[soa_confirmedfrom]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[soa_comment]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[soa_action]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[sap_period]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "PAM SOA list retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/PamSoa" }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "page": {
-                          "type": "object",
-                          "properties": {
-                            "page_number": { "type": "integer" },
-                            "page_size": { "type": "integer" },
-                            "total_count": { "type": "integer" },
-                            "total_pages": { "type": "integer" }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      },
+    "/auth/signup": {
       "post": {
-        "tags": ["accounting-reviews"],
-        "summary": "Create a PAM SOA record",
-        "description": "Create a new PAM SOA entry. The server will set soa_confirmdate to now.",
+        "tags": ["auth"],
+        "summary": "Register a new user",
+        "description": "Create a new user account with organization details",
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "type": { "type": "string", "example": "PAM_SOA" },
-                      "attributes": { "$ref": "#/components/schemas/PamSoaCreateAttributes" }
-                    },
-                    "required": ["type", "attributes"]
+                "$ref": "#/components/schemas/UserSignupRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "organization_name": "Acme Corporation",
+                    "phone_number": "+1234567890",
+                    "email": "user@example.com",
+                    "password": "securePassword123"
                   }
-                },
-                "required": ["data"]
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "PAM SOA created successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
-    "/accounting-reviews/{pam_soa_id}": {
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "User login",
+        "description": "Authenticate a user and receive a JWT token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLoginRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "email": "user@example.com",
+                    "password": "securePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
       "get": {
-        "tags": ["accounting-reviews"],
-        "summary": "Get a PAM SOA by id",
+        "tags": ["auth"],
+        "summary": "Get current user",
+        "description": "Retrieve the currently authenticated user's information",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Current user data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": ["profile"],
+        "summary": "Get own profile",
+        "description": "Retrieve the current user's profile information",
+        "security": [{"bearerAuth": []}],
         "parameters": [
-          { "name": "pam_soa_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return",
+            "schema": {
+              "type": "string",
+              "example": "organization_name,email,phone_number"
+            }
+          }
         ],
         "responses": {
           "200": {
-            "description": "PAM SOA retrieved",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+            "description": "User profile data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       },
       "patch": {
-        "tags": ["accounting-reviews"],
-        "summary": "Update a PAM SOA",
-        "parameters": [
-          { "name": "pam_soa_id", "in": "path", "required": true, "schema": { "type": "integer" } }
-        ],
+        "tags": ["profile"],
+        "summary": "Update own profile",
+        "description": "Update the current user's profile information",
+        "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "type": { "type": "string", "example": "PAM_SOA" },
-                      "attributes": { "$ref": "#/components/schemas/PamSoaUpdateAttributes" }
-                    },
-                    "required": ["type", "attributes"]
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "organization_name": "Updated Organization Name",
+                    "phone_number": "+0987654321"
                   }
-                },
-                "required": ["data"]
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "PAM SOA updated successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      },
-      "delete": {
-        "tags": ["accounting-reviews"],
-        "summary": "Delete a PAM SOA",
-        "parameters": [
-          { "name": "pam_soa_id", "in": "path", "required": true, "schema": { "type": "integer" } }
-        ],
-        "responses": {
-          "204": { "description": "Deleted successfully" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
-    "/accounting-reviews/{pam_soa_id}/actions/review": {
-      "post": {
-        "tags": ["accounting-reviews"],
-        "summary": "Mark a PAM SOA as partially incorrect",
-        "description": "Marks a PAM SOA record as partially incorrect (sets status to 2). Only records with status different than 1 can be marked as partially incorrect. The soa_confirmedfrom field is automatically set from the authenticated user's email.",
+    "/categories": {
+      "get": {
+        "tags": ["categories"],
+        "summary": "Get all categories",
+        "description": "Retrieve a paginated list of ESG assessment categories",
+        "security": [{"bearerAuth": []}],
         "parameters": [
           {
-            "name": "pam_soa_id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "type": { "type": "string", "example": "PAM_SOA" },
-                      "attributes": {
-                        "type": "object",
-                        "properties": {
-                          "soa_comment": { "type": "string", "maxLength": 512 },
-                          "soa_action": { "type": "string", "maxLength": 512 }
-                        },
-                        "required": ["soa_comment", "soa_action"]
-                      }
-                    },
-                    "required": ["type", "attributes"]
-                  }
-                },
-                "required": ["data"]
-              }
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
             }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PAM SOA marked as partially incorrect successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/accounting-reminders": {
-      "get": {
-        "tags": ["accounting-reminders"],
-        "summary": "Get all reminders",
-        "description": "Retrieve reminders list with pagination, filtering, sorting, and field selection.",
-        "parameters": [
           {
             "name": "page[size]",
             "in": "query",
             "description": "Number of items per page",
-            "required": false,
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
-          },
-          {
-            "name": "page[number]",
-            "in": "query",
-            "description": "Page number (0-based)",
-            "required": false,
-            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
           },
           {
             "name": "fields",
             "in": "query",
-            "description": "Comma-separated list of fields to include in response. Allowed: id,from,to,status,template_data,created_at,updated_at",
-            "required": false,
-            "schema": { "type": "string", "example": "id,status,template_data" }
+            "description": "Comma-separated list of fields to return (id, name, name_fr, description, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "name,name_fr,description"
+            }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Comma-separated fields to sort by. Use '-' for descending. Allowed: id,from,to,status,template_data,created_at,updated_at",
-            "required": false,
-            "schema": { "type": "string", "example": "status,-created_at" }
-          },
-          {
-            "name": "filter[id]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[from]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[to]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[status]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "enum": ["pending", "delivered", "failed"], "maxLength": 100 }
-          },
-          {
-            "name": "filter[template_data]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[created_at]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          },
-          {
-            "name": "filter[updated_at]",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "maxLength": 100 }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Reminders list retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/AccountingReminder" }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "page": {
-                          "type": "object",
-                          "properties": {
-                            "page_number": { "type": "integer" },
-                            "page_size": { "type": "integer" },
-                            "total_count": { "type": "integer" },
-                            "total_pages": { "type": "integer" }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      },
-      "post": {
-        "tags": ["accounting-reminders"],
-        "summary": "Create a reminder",
-        "description": "Create a new reminder entry.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "type": { "type": "string", "example": "accounting_reminders" },
-                      "attributes": { "$ref": "#/components/schemas/AccountingReminderCreateAttributes" }
-                    },
-                    "required": ["type", "attributes"]
-                  }
-                },
-                "required": ["data"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Reminder created successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountingReminderResponse" } } }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/accounting-reviews/{pam_soa_id}/actions/reset": {
-      "post": {
-        "tags": ["accounting-reviews"],
-        "summary": "Reset a PAM SOA to initial state",
-        "description": "Resets a PAM SOA record to its initial state (status 0). Only records with status 1 or 2 can be reset. This action clears soa_comment, soa_action, soa_confirmdate, and soa_confirmedfrom fields.",
-        "parameters": [
-          {
-            "name": "pam_soa_id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "type": { "type": "string", "example": "PAM_SOA" },
-                      "attributes": {
-                        "type": "object",
-                        "properties": {
-                          "reason": { "type": "string", "maxLength": 512, "nullable": true }
-                        }
-                      }
-                    },
-                    "required": ["type", "attributes"]
-                  }
-                },
-                "required": ["data"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PAM SOA reset successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/accounting-reviews/{pam_soa_id}/actions/confirm": {
-      "post": {
-        "tags": ["accounting-reviews"],
-        "summary": "Confirm a PAM SOA",
-        "description": "Confirms a PAM SOA record (sets status to 1 and updates confirmedfrom field). The soa_confirmedfrom field is automatically set from the authenticated user's email. Pool owners cannot confirm records with status 2 (partially incorrect) unless they are admins or location admins.",
-        "parameters": [
-          {
-            "name": "pam_soa_id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "PAM SOA confirmed successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PamSoaResponse" } } }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/accounting-reminders/{reminder_id}": {
-      "get": {
-        "tags": ["accounting-reminders"],
-        "summary": "Get a reminder by id",
-        "parameters": [
-          {
-            "name": "reminder_id",
-            "in": "path",
-            "required": true,
-            "schema": { 
-              "type": "string", 
-              "format": "uuid",
-              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-              "description": "UUID format (e.g., 2625641a-b3a3-4f7d-8ef4-5e3128077aab)"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Reminder retrieved",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountingReminderResponse" } } }
-          },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      },
-      "patch": {
-        "tags": ["accounting-reminders"],
-        "summary": "Update a reminder",
-        "parameters": [
-          {
-            "name": "reminder_id",
-            "in": "path",
-            "required": true,
-            "schema": { 
-              "type": "string", 
-              "format": "uuid",
-              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-              "description": "UUID format (e.g., 2625641a-b3a3-4f7d-8ef4-5e3128077aab)"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "type": { "type": "string", "example": "accounting_reminders" },
-                      "attributes": { "$ref": "#/components/schemas/AccountingReminderUpdateAttributes" }
-                    },
-                    "required": ["type", "attributes"]
-                  }
-                },
-                "required": ["data"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Reminder updated successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountingReminderResponse" } } }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      },
-      "delete": {
-        "tags": ["accounting-reminders"],
-        "summary": "Delete a reminder",
-        "parameters": [
-          {
-            "name": "reminder_id",
-            "in": "path",
-            "required": true,
-            "schema": { 
-              "type": "string", 
-              "format": "uuid",
-              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-              "description": "UUID format (e.g., 2625641a-b3a3-4f7d-8ef4-5e3128077aab)"
-            }
-          }
-        ],
-        "responses": {
-          "204": { "description": "Deleted successfully" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/accounting-records": {
-      "get": {
-        "tags": ["accounting-records"],
-        "summary": "Get accounting data records",
-        "description": "Retrieve accounting data with pagination, filtering, and format options (hierarchical or JSON API). Supports multiple view types.",
-        "parameters": [
-          {
-            "name": "filter[periodStartDate]",
-            "in": "query",
-            "required": false,
-            "description": "Period start date filter (ISO date format)",
-            "schema": { "type": "string", "format": "date" }
-          },
-          {
-            "name": "filter[periodFinishDate]",
-            "in": "query",
-            "required": false,
-            "description": "Period end date filter (ISO date format)",
-            "schema": { "type": "string", "format": "date" }
-          },
-          {
-            "name": "filter[sapYear]",
-            "in": "query",
-            "description": "SAP year filter",
-            "schema": { "type": "integer", "minimum": 2000, "maximum": 3000 }
-          },
-          {
-            "name": "filter[sapPeriod]",
-            "in": "query",
-            "description": "SAP period filter",
-            "schema": { "type": "integer" }
-          },
-          {
-            "name": "filter[sapPeriodType]",
-            "in": "query",
-            "description": "SAP period type filter (0 = weekly, 1 = monthly). Defaults to 1 if not provided.",
-            "schema": { "type": "integer", "enum": [0, 1], "default": 1 }
-          },
-          {
-            "name": "filter[locSapPeriod]",
-            "in": "query",
-            "description": "Location SAP period filter (0 or 1). Defaults to 1 if not provided.",
-            "schema": { "type": "integer", "enum": [0, 1], "default": 1 }
-          },
-          {
-            "name": "filter[locationID]",
-            "in": "query",
-            "description": "Location ID filter (single integer or comma-separated values)",
-            "schema": { 
-              "oneOf": [
-                { "type": "integer", "minimum": 0 },
-                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
-              ]
+            "description": "Sort field (prefix with - for descending). Allowed: name, name_fr, description, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
             }
           },
           {
-            "name": "filter[resourcePoolID]",
+            "name": "filter[name]",
             "in": "query",
-            "description": "Resource pool ID filter (single integer or comma-separated values)",
-            "schema": { 
-              "oneOf": [
-                { "type": "integer", "minimum": 0 },
-                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
-              ]
+            "description": "Filter by name",
+            "schema": {
+              "type": "string"
             }
-          },
-          {
-            "name": "filter[resourcePoolLabel]",
-            "in": "query",
-            "description": "Resource pool name/label filter",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "filter[resourceName]",
-            "in": "query",
-            "description": "Resource name filter",
-            "schema": { "type": "string", "maxLength": 1000 }
-          },
-          {
-            "name": "filter[costCenter]",
-            "in": "query",
-            "description": "Cost center filter",
-            "schema": { "type": "string", "maxLength": 1000 }
-          },
-          {
-            "name": "page[size]",
-            "in": "query",
-            "description": "Number of records per page",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 10000, "default": 10 }
-          },
-          {
-            "name": "page[number]",
-            "in": "query",
-            "description": "Page number (0-based)",
-            "schema": { "type": "integer", "minimum": 0, "default": 0 }
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "description": "Response format",
-            "schema": { "type": "string", "enum": ["hierarchical", "jsonapi"], "default": "hierarchical" }
-          },
-          {
-            "name": "view",
-            "in": "query",
-            "description": "View type for hierarchical format",
-            "schema": { "type": "string", "enum": ["workstep-resources", "resources", "workstep-projects", "pools"], "default": "workstep-resources" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successfully retrieved accounting data",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    { "$ref": "#/components/schemas/AccountingDataResponse" },
-                    { "$ref": "#/components/schemas/HierarchicalAccountingDataResponse" }
-                  ]
-                }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/accounting-records/filter-options": {
-      "get": {
-        "tags": ["accounting-records"],
-        "summary": "Get filter options for accounting data",
-        "description": "Retrieve available filter options based on user authentication including locations, resource pools, cost centers, and SAP periods.",
-        "parameters": [
-          {
-            "name": "sapYear",
-            "in": "query",
-            "required": false,
-            "description": "SAP year to filter available options",
-            "schema": { "type": "integer", "minimum": 2000, "maximum": 3000 }
-          },
-          {
-            "name": "sapPeriod",
-            "in": "query",
-            "required": false,
-            "description": "SAP period to filter available options",
-            "schema": { "type": "integer" }
-          },
-          {
-            "name": "locationID",
-            "in": "query",
-            "required": false,
-            "description": "Location ID filter (single integer or comma-separated values)",
-            "schema": { 
-              "oneOf": [
-                { "type": "integer", "minimum": 0 },
-                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
-              ]
-            }
-          },
-          {
-            "name": "resourcePoolID",
-            "in": "query",
-            "required": false,
-            "description": "Resource pool ID filter (single integer or comma-separated values)",
-            "schema": { 
-              "oneOf": [
-                { "type": "integer", "minimum": 0 },
-                { "type": "string", "pattern": "^\\d+(,\\d+)*$" }
-              ]
-            }
-          },
-          {
-            "name": "costCenter",
-            "in": "query",
-            "required": false,
-            "description": "Cost center filter",
-            "schema": { "type": "string", "maxLength": 1000 }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successfully retrieved filter options",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/AccountingDataFilterOptionsResponse" }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
-      }
-    },
-    "/pool-owners": {
-      "get": {
-        "tags": ["pool-owners"],
-        "summary": "Get all pool owners",
-        "description": "Retrieve pool owners list with pagination and optional pool inclusion, filtered by SAP parameters and optional location.",
-        "parameters": [
-          {
-            "name": "page_number",
-            "in": "query",
-            "description": "Page number",
-            "required": false,
-            "schema": { "type": "integer", "minimum": 1, "default": 1 }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "description": "Number of items per page",
-            "required": false,
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
           },
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated list of relationships to include. Allowed: pools",
-            "required": false,
-            "schema": { "type": "string", "example": "pools" }
-          },
-          {
-            "name": "sap_period",
-            "in": "query",
-            "description": "SAP period",
-            "required": true,
-            "schema": { "type": "integer" }
-          },
-          {
-            "name": "sap_year",
-            "in": "query",
-            "description": "SAP year",
-            "required": true,
-            "schema": { "type": "integer" }
-          },
-          {
-            "name": "sap_period_type",
-            "in": "query",
-            "description": "SAP period type",
-            "required": true,
-            "schema": { "type": "integer" }
-          },
-          {
-            "name": "soa_status",
-            "in": "query",
-            "description": "SOA status",
-            "required": true,
-            "schema": { "type": "integer" }
-          },
-          {
-            "name": "location",
-            "in": "query",
-            "description": "Comma-separated list of location names to filter by (e.g., 'Shenzhen,Tunis')",
-            "required": false,
-            "schema": { "type": "string", "example": "Shenzhen,Tunis" }
+            "description": "Include related resources (sections, result_categories)",
+            "schema": {
+              "type": "string",
+              "example": "sections"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Pool owners list retrieved successfully",
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{categoryId}": {
+      "get": {
+        "tags": ["categories"],
+        "summary": "Get category by ID",
+        "description": "Retrieve a specific category by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (sections, result_categories)",
+            "schema": {
+              "type": "string",
+              "example": "sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{categoryId}/sections": {
+      "get": {
+        "tags": ["categories", "sections"],
+        "summary": "Get sections by category",
+        "description": "Retrieve all sections belonging to a specific category",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, questions)",
+            "schema": {
+              "type": "string",
+              "example": "questions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sections in the category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sections": {
+      "get": {
+        "tags": ["sections"],
+        "summary": "Get all sections",
+        "description": "Retrieve a paginated list of all sections across categories",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, category_id, title, title_fr, description, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "title,title_fr,description"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: title, title_fr, description, category_id, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[category_id]",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, questions, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "category,questions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sections/{sectionId}": {
+      "get": {
+        "tags": ["sections"],
+        "summary": "Get section by ID",
+        "description": "Retrieve a specific section by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "description": "Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, questions, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "category,questions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Section details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sections/{sectionId}/questions": {
+      "get": {
+        "tags": ["sections", "questions"],
+        "summary": "Get questions by section",
+        "description": "Retrieve all questions belonging to a specific section",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "description": "Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section)",
+            "schema": {
+              "type": "string",
+              "example": "section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of questions in the section",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions": {
+      "get": {
+        "tags": ["questions"],
+        "summary": "Get all questions",
+        "description": "Retrieve a paginated list of all assessment questions",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, section_id, text, text_fr, score_value, level, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "text,text_fr,score_value,level"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: text, text_fr, score_value, level, section_id, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "level"
+            }
+          },
+          {
+            "name": "filter[section_id]",
+            "in": "query",
+            "description": "Filter by section ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter[level]",
+            "in": "query",
+            "description": "Filter by question level",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section)",
+            "schema": {
+              "type": "string",
+              "example": "section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of questions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions/{questionId}": {
+      "get": {
+        "tags": ["questions"],
+        "summary": "Get question by ID",
+        "description": "Retrieve a specific question by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "description": "Question UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section)",
+            "schema": {
+              "type": "string",
+              "example": "section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Question details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Question not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessment-progress/me": {
+      "get": {
+        "tags": ["assessment-progress"],
+        "summary": "Get current user's assessment progress",
+        "description": "Retrieve the assessment progress for the currently authenticated user",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Assessment progress data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Assessment progress not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["assessment-progress"],
+        "summary": "Update current user's assessment progress",
+        "description": "Update the assessment progress for the currently authenticated user (answers, current page, UI state)",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentProgressUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "assessment_progress",
+                  "attributes": {
+                    "answers": {"question-uuid-1": true, "question-uuid-2": false},
+                    "current_page": 2,
+                    "ui_state": {"collapsed_sections": []},
+                    "answered_questions": 10,
+                    "completion_percentage": 25.5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assessment progress updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessment-progress/me/reset": {
+      "post": {
+        "tags": ["assessment-progress"],
+        "summary": "Reset current user's assessment progress",
+        "description": "Reset all assessment progress for the currently authenticated user (clears answers, resets page to 0)",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Assessment progress reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/results": {
+      "get": {
+        "tags": ["results"],
+        "summary": "Get all results",
+        "description": "Retrieve a paginated list of assessment results",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return",
+            "schema": {
+              "type": "string",
+              "example": "user_id,total_score,current_rank"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: id, user_id, total_score, current_rank, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[user_id]",
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (result_categories, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "result_categories,result_sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["results"],
+        "summary": "Create a new result",
+        "description": "Create a new assessment result. Validates user's next_allowed_assessment_date before creation.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "Result",
+                  "attributes": {
+                    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "total_score": 85,
+                    "global_feedback": "Good performance overall",
+                    "current_rank": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Result created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or assessment cooldown not elapsed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/results/{id}": {
+      "get": {
+        "tags": ["results"],
+        "summary": "Get result by ID",
+        "description": "Retrieve a specific result by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (result_categories, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "result_categories,result_sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["results"],
+        "summary": "Update a result",
+        "description": "Update an existing result",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["results"],
+        "summary": "Delete a result",
+        "description": "Soft delete a result",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Result deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-categories": {
+      "get": {
+        "tags": ["result-categories"],
+        "summary": "Get all result categories",
+        "description": "Retrieve a paginated list of category-level results",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "filter[result_id]",
+            "in": "query",
+            "description": "Filter by result ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter[category_id]",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: id, result_id, category_id, score, level, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-score"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, results)",
+            "schema": {
+              "type": "string",
+              "example": "category,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of result categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["result-categories"],
+        "summary": "Create a result category",
+        "description": "Create a new category-level result entry",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultCategoryCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "ResultCategory",
+                  "attributes": {
+                    "result_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "category_id": "660e8400-e29b-41d4-a716-446655440001",
+                    "score": 75,
+                    "level": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Result category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-categories/{id}": {
+      "get": {
+        "tags": ["result-categories"],
+        "summary": "Get result category by ID",
+        "description": "Retrieve a specific result category by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, results)",
+            "schema": {
+              "type": "string",
+              "example": "category,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["result-categories"],
+        "summary": "Update a result category",
+        "description": "Update an existing result category",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultCategoryUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["result-categories"],
+        "summary": "Delete a result category",
+        "description": "Soft delete a result category",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Result category deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-sections": {
+      "get": {
+        "tags": ["result-sections"],
+        "summary": "Get all result sections",
+        "description": "Retrieve a paginated list of section-level results",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "filter[result_id]",
+            "in": "query",
+            "description": "Filter by result ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter[section_id]",
+            "in": "query",
+            "description": "Filter by section ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: id, result_id, section_id, score, level, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-score"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section, results)",
+            "schema": {
+              "type": "string",
+              "example": "section,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of result sections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["result-sections"],
+        "summary": "Create a result section",
+        "description": "Create a new section-level result entry",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultSectionCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "ResultSection",
+                  "attributes": {
+                    "result_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "section_id": "770e8400-e29b-41d4-a716-446655440002",
+                    "score": 80,
+                    "level": 3
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Result section created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-sections/{id}": {
+      "get": {
+        "tags": ["result-sections"],
+        "summary": "Get result section by ID",
+        "description": "Retrieve a specific result section by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section, results)",
+            "schema": {
+              "type": "string",
+              "example": "section,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result section details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["result-sections"],
+        "summary": "Update a result section",
+        "description": "Update an existing result section",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultSectionUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result section updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["result-sections"],
+        "summary": "Delete a result section",
+        "description": "Soft delete a result section",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Result section deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/retake-request": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Request assessment retake",
+        "description": "Authenticated user requests to retake the assessment",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetakeRequestBody"
+              },
+              "example": {
+                "reason": "I would like to retake the assessment to improve my score"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Retake request submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or pending retake request already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/contact-us": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Submit contact us message",
+        "description": "Submit a contact us message (public endpoint, authentication optional)",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactUsRequestBody"
+              },
+              "example": {
+                "subject": "Question about ESG Assessment",
+                "organization_name": "Acme Corp",
+                "email": "contact@acme.com",
+                "message": "I have a question about the assessment process..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact message submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/bug-report": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Submit bug report",
+        "description": "Authenticated user submits a bug report",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugReportRequestBody"
+              },
+              "example": {
+                "category": "bug",
+                "subject": "Page not loading correctly",
+                "organization_name": "Acme Corp",
+                "email": "user@acme.com",
+                "message": "When I click on the assessment page, it shows a blank screen..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bug report submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/support-request": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Submit support request",
+        "description": "Authenticated user submits a support request",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportRequestBody"
+              },
+              "example": {
+                "category": "support",
+                "subject": "Need help with assessment",
+                "organization_name": "Acme Corp",
+                "email": "user@acme.com",
+                "message": "I need assistance understanding the ESG criteria..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Support request submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-messages/check-pending-retake": {
+      "get": {
+        "tags": ["inbox-actions"],
+        "summary": "Check pending retake request",
+        "description": "Check if the current user has a pending retake request",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Pending retake status",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/PoolOwner" }
-                    },
-                    "included": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/Pool" },
-                      "description": "Included pools when include=pools is specified"
-                    },
-                    "meta": {
                       "type": "object",
                       "properties": {
-                        "page_number": { "type": "integer" },
-                        "page_size": { "type": "integer" },
-                        "total_count": { "type": "integer" },
-                        "total_pages": { "type": "integer" }
+                        "has_pending_request": {
+                          "type": "boolean",
+                          "description": "Whether user has a pending retake request"
+                        },
+                        "pending_request": {
+                          "type": "object",
+                          "nullable": true,
+                          "description": "The pending request details if exists"
+                        }
                       }
                     }
                   }
@@ -950,286 +2263,59 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     }
   },
   "components": {
     "schemas": {
-      "PamSoa": {
+      "UserSignupRequest": {
         "type": "object",
-        "properties": {
-          "type": { "type": "string", "example": "PAM_SOA" },
-          "id": { "type": "string", "example": "123" },
-          "attributes": { "$ref": "#/components/schemas/PamSoaAttributes" }
-        }
-      },
-      "PamSoaResponse": {
-        "type": "object",
-        "properties": { "data": { "$ref": "#/components/schemas/PamSoa" } }
-      },
-      "PamSoaAttributes": {
-        "type": "object",
-        "properties": {
-          "soa_id": { "type": "integer" },
-          "sap_id": { "type": "integer" },
-          "sap_period_type": { "type": "integer", "enum": [1, 2] },
-          "sap_year": { "type": "integer" },
-          "loc_id": { "type": "integer" },
-          "rp_id": { "type": "integer" },
-          "soa_status": { "type": "integer", "enum": [0, 1, 2, 3] },
-          "soa_confirmdate": { "type": "string", "format": "date-time", "nullable": true },
-          "soa_confirmedfrom": { "type": "string", "maxLength": 50, "nullable": true },
-          "soa_comment": { "type": "string", "maxLength": 512, "nullable": true },
-          "soa_action": { "type": "string", "maxLength": 512, "nullable": true },
-          "sap_period": { "type": "integer", "nullable": true },
-          "reason": { "type": "string", "maxLength": 512, "nullable": true }
-        }
-      },
-      "PamSoaCreateAttributes": {
-        "type": "object",
-        "properties": {
-          "sap_id": { "type": "integer" },
-          "sap_period_type": { "type": "integer", "enum": [1, 2] },
-          "sap_year": { "type": "integer" },
-          "loc_id": { "type": "integer" },
-          "rp_id": { "type": "integer" },
-          "soa_status": { "type": "integer", "enum": [0], "default": 0 },
-          "soa_confirmedfrom": { "type": "string", "maxLength": 50, "nullable": true },
-          "soa_comment": { "type": "string", "maxLength": 512, "nullable": true },
-          "soa_action": { "type": "string", "maxLength": 512, "nullable": true },
-          "sap_period": { "type": "integer", "nullable": true },
-          "reason": { "type": "string", "maxLength": 512, "nullable": true }
-        },
-        "required": ["sap_id", "sap_period_type", "sap_year", "loc_id", "rp_id"]
-      },
-      "PamSoaUpdateAttributes": {
-        "type": "object",
-        "properties": {
-          "soa_status": { "type": "integer", "enum": [0, 1, 2, 3] },
-          "soa_confirmedfrom": { "type": "string", "maxLength": 50, "nullable": true },
-          "soa_comment": { "type": "string", "maxLength": 512, "nullable": true },
-          "soa_action": { "type": "string", "maxLength": 512, "nullable": true },
-          "reason": { "type": "string", "maxLength": 512, "nullable": true }
-        },
-        "required": ["soa_status"]
-      },
-      "AccountingReminder": {
-        "type": "object",
-        "properties": {
-          "type": { "type": "string", "example": "accounting_reminders" },
-          "id": { "type": "string", "example": "123" },
-          "attributes": { "$ref": "#/components/schemas/AccountingReminderAttributes" }
-        }
-      },
-      "AccountingReminderResponse": {
-        "type": "object",
-        "properties": { "data": { "$ref": "#/components/schemas/AccountingReminder" } }
-      },
-      "AccountingReminderAttributes": {
-        "type": "object",
-        "properties": {
-          "id": { 
-            "type": "string", 
-            "format": "uuid",
-            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-          },
-          "from": { "type": "string", "maxLength": 250 },
-          "to": { "type": "string", "maxLength": 250 },
-          "status": { "type": "string", "enum": ["pending", "delivered", "failed"] },
-          "template_data": { "type": "string", "maxLength": 255, "nullable": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
-        }
-      },
-      "AccountingReminderCreateAttributes": {
-        "type": "object",
-        "properties": {
-          "to": { "type": "string", "maxLength": 250 },
-          "template_data": { "type": "object", "nullable": true }
-        },
-        "required": ["to"]
-      },
-      "AccountingReminderUpdateAttributes": {
-        "type": "object",
-        "properties": {
-          "to": { "type": "string", "maxLength": 250, "nullable": true },
-          "status": { "type": "string", "enum": ["pending", "delivered", "failed"] },
-          "template_data": { "type": "object", "nullable": true }
-        },
-        "required": ["status"]
-      },
-      "AccountingData": {
-        "type": "object",
-        "properties": {
-          "type": { "type": "string", "example": "ACCOUNTING_DATA" },
-          "id": { "type": "string", "example": "123" },
-          "attributes": { "$ref": "#/components/schemas/AccountingDataAttributes" }
-        }
-      },
-      "AccountingDataAttributes": {
-        "type": "object",
-        "properties": {
-          "ResourcePool": { "type": "string" },
-          "res_id": { "type": "integer" },
-          "loc_id": { "type": "integer" },
-          "Resource": { "type": "string" },
-          "IsExtern": { "type": "integer" },
-          "CostCenter": { "type": "string" },
-          "Work": { "type": "number", "format": "float", "description": "Planned effort (work hours)" },
-          "AWork": { "type": "number", "format": "float", "description": "Accounted effort (actual work hours)" },
-          "RegWork": { "type": "number", "format": "float", "description": "Regular working time" },
-          "GLAZ": { "type": "number", "format": "float", "description": "GLAZ hours" },
-          "RegWork_Glaz": { "type": "number", "format": "float", "description": "RegWork - GLAZ" },
-          "A_Work_RegWork_Glaz": { "type": "number", "format": "float", "description": "AWork - RegWork_Glaz" },
-          "Start": { "type": "string", "format": "date-time" },
-          "Finish": { "type": "string", "format": "date-time" },
-          "Project": { "type": "string" },
-          "PSP": { "type": "string" },
-          "Workpackage": { "type": "string" },
-          "Workstep": { "type": "string" },
-          "Anonym": { "type": "string" },
-          "SoaStatus": { "type": "integer", "description": "SOA status (0=Not Yet Processed, 1=Confirmed, 2=Partially Confirmed)" },
-          "SoaId": { "type": "integer", "description": "SOA ID reference" }
-        }
-      },
-      "AccountingDataResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/AccountingData" }
-          },
-          "meta": {
-            "type": "object",
-            "properties": {
-              "total": { "type": "integer" },
-              "pageSize": { "type": "integer" },
-              "pageNumber": { "type": "integer" },
-              "totalPages": { "type": "integer" }
-            }
-          }
-        }
-      },
-      "HierarchicalAccountingDataItem": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "description": "Unique identifier for the row" },
-          "name": { "type": "string", "description": "Pool name (for pool-level rows)" },
-          "ressource": { "type": "string", "description": "Resource or pool display name (for workstep-resources view)" },
-          "resourcePool": { "type": "string", "description": "Resource pool display name (for pools/resources views)" },
-          "project": { "type": "string", "description": "Project name (for project rows in workstep-projects view)" },
-          "type": { "type": "string", "description": "Resource type: '1' for external, '0' for internal (only present for resource rows)" },
-          "pspElement": { "type": "string", "description": "PSP element" },
-          "workPackage": { "type": "string", "description": "Work package name" },
-          "workStep": { "type": "string", "description": "Work step name" },
-          "plannedEfforts": { "type": "string", "description": "Planned effort hours (formatted to 2 decimals)" },
-          "plannedEffortsPercentage": { "type": "string", "description": "Percentage of planned efforts relative to working time" },
-          "workingTimeGlaz": { "type": "string", "description": "Working time with GLAZ breakdown (format: RegWork - GLAZ = RegWork_Glaz)" },
-          "workingTime": { "type": "string", "description": "Regular working time (formatted to 2 decimals)" },
-          "accountedEfforts": { "type": "string", "description": "Accounted effort hours (formatted to 2 decimals)" },
-          "accountedEffortsDifference": { "type": "string", "description": "Difference between accounted efforts and working time minus GLAZ" },
-          "status": { "type": "integer", "description": "SOA status (0=Not Yet Processed, 1=Confirmed, 2=Partially Confirmed)" },
-          "comment": { "type": "string", "description": "Status label text" },
-          "hasLink": { "type": "boolean", "description": "Whether the row has a link to SOA details (true for status 2)" },
-          "soaId": { "type": "integer", "description": "SOA ID reference" },
-          "soaConfirmedFrom": { "type": "string", "description": "Email of user who confirmed the SOA" },
-          "icon": { "type": "string", "description": "Icon identifier (e.g., 'layers', 'user', 'briefcase')" },
-          "iconColor": { "type": "string", "description": "Color for the icon (e.g., '#49C94F', 'orange', 'gray')" },
-          "tags": {
-            "type": "array",
-            "description": "Array of tag objects for date range display",
-            "items": {
-              "type": "object",
-              "properties": {
-                "text": { "type": "string" },
-                "color": { "type": "string" }
-              }
-            }
-          },
-          "subRows": {
-            "type": "array",
-            "description": "Nested child rows for hierarchical structure",
-            "items": { "$ref": "#/components/schemas/HierarchicalAccountingDataItem" }
-          }
-        }
-      },
-      "HierarchicalAccountingDataResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/HierarchicalAccountingDataItem" }
-          },
-          "meta": {
-            "type": "object",
-            "properties": {
-              "total": { "type": "integer" },
-              "pageSize": { "type": "integer" },
-              "pageNumber": { "type": "integer" },
-              "totalPages": { "type": "integer" },
-              "dateRange": { "type": "string" }
-            }
-          }
-        }
-      },
-      "AccountingDataFilterOptionsResponse": {
-        "type": "object",
+        "required": ["data"],
         "properties": {
           "data": {
             "type": "object",
+            "required": ["type", "attributes"],
             "properties": {
-              "userRole": { 
-                "type": "integer",
-                "description": "User's role level (10=Admin, 20=Location Owner, 30=Pool Owner)"
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
               },
-              "locations": {
-                "type": "array",
-                "description": "Available locations based on user access and filters",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "integer", "description": "Location ID" },
-                    "name": { "type": "string", "description": "Location name" }
-                  }
-                }
-              },
-              "resourcePools": {
-                "type": "array",
-                "description": "Available resource pools based on user access and filters",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "integer", "description": "Resource pool ID" },
-                    "name": { "type": "string", "description": "Resource pool name" }
-                  }
-                }
-              },
-              "sapPeriods": {
-                "type": "array",
-                "description": "Available SAP periods (last 10 months) based on user access and filters",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "periodType": { "type": "integer", "description": "SAP period type" },
-                    "year": { "type": "integer", "description": "SAP year" },
-                    "period": { "type": "integer", "description": "SAP period (1-12 for monthly)" },
-                    "acFrom": { "type": "string", "format": "date", "description": "Period start date" },
-                    "acTo": { "type": "string", "format": "date", "description": "Period end date" }
-                  }
-                }
-              },
-              "costCenters": {
-                "type": "array",
-                "description": "Available cost centers based on user access and filters",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "integer", "description": "Cost center ID" },
-                    "name": { "type": "string", "description": "Cost center name" }
+              "attributes": {
+                "type": "object",
+                "required": ["organization_name", "phone_number", "email", "password"],
+                "properties": {
+                  "organization_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Organization name"
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Phone number"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "Password (min 6 characters)"
                   }
                 }
               }
@@ -1237,57 +2323,707 @@
           }
         }
       },
-      "PoolOwner": {
+      "UserLoginRequest": {
         "type": "object",
+        "required": ["data"],
         "properties": {
-          "type": { "type": "string", "example": "pool-owner" },
-          "id": { "type": "string", "example": "123" },
-          "attributes": { "$ref": "#/components/schemas/PoolOwnerAttributes" },
-          "relationships": {
+          "data": {
             "type": "object",
+            "required": ["type", "attributes"],
             "properties": {
-              "pools": {
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Password"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
+              },
+              "attributes": {
                 "type": "object",
                 "properties": {
-                  "data": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "type": { "type": "string", "example": "pool" },
-                        "id": { "type": "string" }
+                  "organization_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Organization name"
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Phone number"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "New password (min 6 characters)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "users"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "User UUID"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "JWT authentication token"
+              }
+            }
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "users"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "next_allowed_assessment_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "category"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Category name (English)"
+                  },
+                  "name_fr": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Category name (French)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Category description"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "section"
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          }
+                        }
                       }
                     }
                   }
                 }
               }
             }
-          }
-        }
-      },
-      "PoolOwnerAttributes": {
-        "type": "object",
-        "properties": {
-          "user_email": { "type": "string", "format": "email" },
-          "user_name": { "type": "string" },
-          "rol_level": { "type": "integer" }
-        }
-      },
-      "Pool": {
-        "type": "object",
-        "properties": {
-          "type": { "type": "string", "example": "pool" },
-          "id": { "type": "string" },
-          "attributes": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string" },
-              "location": { "type": "string", "description": "Location name of the pool" }
+          },
+          "included": {
+            "type": "array",
+            "description": "Included related resources (when using include parameter)",
+            "items": {
+              "type": "object"
             }
           }
         }
       },
-      "Error": {
+      "CategoriesListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "category"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "name_fr": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "Total number of records"
+              },
+              "page": {
+                "type": "integer",
+                "description": "Current page number"
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "Number of items per page"
+              },
+              "totalPages": {
+                "type": "integer",
+                "description": "Total number of pages"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "first": {
+                "type": "string"
+              },
+              "last": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string",
+                "nullable": true
+              },
+              "next": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "SectionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "section"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "category_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Parent category UUID"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Section title (English)"
+                  },
+                  "title_fr": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Section title (French)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Section description"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "example": "category"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "questions": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "question"
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "description": "Included related resources",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "SectionsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "section"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "category_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "title_fr": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "pageSize": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "first": {
+                "type": "string"
+              },
+              "last": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string",
+                "nullable": true
+              },
+              "next": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "QuestionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "question"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "section_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Parent section UUID"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Question text (English)"
+                  },
+                  "text_fr": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Question text (French)"
+                  },
+                  "score_value": {
+                    "type": "integer",
+                    "description": "Score value for this question"
+                  },
+                  "level": {
+                    "type": "integer",
+                    "description": "Question difficulty level"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "section": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "example": "section"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "description": "Included related resources",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "QuestionsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "question"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "section_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "text_fr": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "score_value": {
+                      "type": "integer"
+                    },
+                    "level": {
+                      "type": "integer"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "pageSize": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "first": {
+                "type": "string"
+              },
+              "last": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string",
+                "nullable": true
+              },
+              "next": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
         "type": "object",
         "properties": {
           "errors": {
@@ -1295,47 +3031,747 @@
             "items": {
               "type": "object",
               "properties": {
-                "status": { "type": "string" },
-                "title": { "type": "string" },
-                "detail": { "type": "string" },
-                "code": { "type": "string" },
+                "status": {
+                  "type": "string",
+                  "description": "HTTP status code"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Error title"
+                },
+                "detail": {
+                  "type": "string",
+                  "description": "Error detail message"
+                },
                 "source": {
                   "type": "object",
                   "properties": {
-                    "pointer": { "type": "string" }
+                    "pointer": {
+                      "type": "string",
+                      "description": "JSON pointer to the field that caused the error"
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    },
-    "responses": {
-      "BadRequest": {
-        "description": "Bad Request - Validation errors or invalid parameters",
-        "content": {
-          "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" }
+      },
+      "AssessmentProgressResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "assessment_progress"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "answers": {
+                    "type": "object",
+                    "description": "Object mapping question IDs to boolean answers",
+                    "additionalProperties": {
+                      "type": "boolean"
+                    }
+                  },
+                  "current_page": {
+                    "type": "integer",
+                    "description": "Current page index in the assessment"
+                  },
+                  "ui_state": {
+                    "type": "object",
+                    "description": "UI state information (collapsed sections, etc.)"
+                  },
+                  "total_questions": {
+                    "type": "integer",
+                    "description": "Total number of questions in the assessment"
+                  },
+                  "answered_questions": {
+                    "type": "integer",
+                    "description": "Number of questions answered"
+                  },
+                  "completion_percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Percentage of assessment completed (0-100)"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
           }
         }
       },
-      "NotFound": {
-        "description": "Resource not found",
-        "content": {
-          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+      "AssessmentProgressUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["assessment_progress"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "object",
+                    "description": "Object mapping question IDs to boolean answers",
+                    "additionalProperties": {
+                      "type": "boolean"
+                    }
+                  },
+                  "current_page": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "ui_state": {
+                    "type": "object"
+                  },
+                  "total_questions": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "answered_questions": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "completion_percentage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                }
+              }
+            }
+          }
         }
       },
-      "Unauthorized": {
-        "description": "Unauthorized",
-        "content": {
-          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+      "ResultResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "result"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "total_score": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Total assessment score"
+                  },
+                  "global_feedback": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Overall feedback text"
+                  },
+                  "current_rank": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Current ranking"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "result_categories": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "example": "result_category" },
+                            "id": { "type": "string", "format": "uuid" }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "result_sections": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "example": "result_section" },
+                            "id": { "type": "string", "format": "uuid" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
         }
       },
-      "InternalServerError": {
-        "description": "Internal Server Error",
-        "content": {
-          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+      "ResultsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "result" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": { "type": "string", "format": "uuid" },
+                    "total_score": { "type": "integer", "nullable": true },
+                    "global_feedback": { "type": "string", "nullable": true },
+                    "current_rank": { "type": "integer", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "ResultCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["Result"]
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": {
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "total_score": { "type": "integer", "nullable": true },
+                  "global_feedback": { "type": "string", "nullable": true },
+                  "current_rank": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["Result"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "total_score": { "type": "integer", "nullable": true },
+                  "global_feedback": { "type": "string", "nullable": true },
+                  "current_rank": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "result_category" },
+              "id": { "type": "string", "format": "uuid" },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "result" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  },
+                  "category": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "category" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "ResultCategoriesListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "result_category" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "result_id": { "type": "string", "format": "uuid" },
+                    "category_id": { "type": "string", "format": "uuid" },
+                    "score": { "type": "integer", "nullable": true },
+                    "level": { "type": "integer", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "ResultCategoryCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultCategory"] },
+              "attributes": {
+                "type": "object",
+                "required": ["result_id", "category_id"],
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultCategoryUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultCategory"] },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultSectionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "result_section" },
+              "id": { "type": "string", "format": "uuid" },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "section_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "result" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  },
+                  "section": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "section" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "ResultSectionsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "result_section" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "result_id": { "type": "string", "format": "uuid" },
+                    "section_id": { "type": "string", "format": "uuid" },
+                    "score": { "type": "integer", "nullable": true },
+                    "level": { "type": "integer", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "ResultSectionCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultSection"] },
+              "attributes": {
+                "type": "object",
+                "required": ["result_id", "section_id"],
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "section_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultSectionUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultSection"] },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "section_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "InboxMessageResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "inbox_message" },
+              "id": { "type": "string", "format": "uuid" },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "sent_by_user_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "sent_by_admin_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "sent_by_super_admin_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "type": {
+                    "type": "string",
+                    "enum": ["contact_us", "retake_request", "support_request", "bug_report", "result_feedback"]
+                  },
+                  "payload": { "type": "object" },
+                  "status": {
+                    "type": "string",
+                    "enum": ["unresolved", "resolved"],
+                    "nullable": true
+                  },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RetakeRequestBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "Optional reason for requesting a retake"
+          }
+        }
+      },
+      "ContactUsRequestBody": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Subject of the message"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Organization name (optional for visitors)"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Contact email (optional for authenticated users)"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Message content"
+          }
+        }
+      },
+      "BugReportRequestBody": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "default": "bug",
+            "description": "Bug category"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Bug report subject"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Bug description"
+          }
+        }
+      },
+      "SupportRequestBody": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "default": "support",
+            "description": "Support category"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Support request subject"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Support request details"
+          }
         }
       }
     },
@@ -1344,10 +3780,8 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT Authorization header using the Bearer scheme"
+        "description": "Enter your JWT token obtained from /auth/login or /auth/signup"
       }
     }
   }
 }
-
-
