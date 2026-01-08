@@ -4,6 +4,7 @@ const { create, update, getAll } = require('../validation/Result.rules.js');
 const ResultDeserializer = require('../deserializer/ResultDeserializer.js');
 const deserializeMiddleware = require('../middleware/deserializeMiddleware.js');
 const validate = require('../middleware/validationMiddleware.js');
+const { requireAdmin } = require('../middleware/authMiddleware.js');
 
 const router = express.Router();
 
@@ -16,6 +17,12 @@ router.get('/',
 router.get('/:id', 
   
   resultController.getById
+);
+
+// Get assessment details for a specific result (admin/super admin only)
+router.get('/:id/assessment-details', 
+  requireAdmin,
+  resultController.getAssessmentDetails
 );
 
 router.post('/', 

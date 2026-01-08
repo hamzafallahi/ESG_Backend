@@ -6,6 +6,7 @@ const ResultSerializer = new Serializer('results', {
     'total_score', 
     'global_feedback', 
     'current_rank', 
+    'assessment_details',
     'created_at', 
     'updated_at', 
     'deleted_at',

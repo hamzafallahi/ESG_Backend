@@ -20,6 +20,11 @@ module.exports = (sequelize, type) => {
     },
     current_rank: {
       type: type.INTEGER
+    },
+    assessment_details: {
+      type: type.JSONB,
+      allowNull: true,
+      defaultValue: null
     }
   }, {
     timestamps: true,
@@ -44,13 +49,28 @@ module.exports = (sequelize, type) => {
     const InboxMessage = sequelize.models.inbox_message;
     
     if (result.user_id) {
-      // Reset assessment progress
+      // Save assessment progress to result before resetting
       if (AssessmentProgress) {
         const progress = await AssessmentProgress.findOne({
           where: { user_id: result.user_id }
         });
         
         if (progress) {
+          // Save the assessment progress snapshot to the result
+          const assessmentDetails = {
+            user_id: progress.user_id,
+            answers: progress.answers,
+            current_page: progress.current_page,
+            ui_state: progress.ui_state,
+            total_questions: progress.total_questions,
+            answered_questions: progress.answered_questions,
+            completion_percentage: parseFloat(progress.completion_percentage),
+            saved_at: new Date().toISOString()
+          };
+          
+          await result.update({ assessment_details: assessmentDetails });
+          
+          // Reset the assessment progress
           await progress.update({
             answers: {},
             current_page: 0,

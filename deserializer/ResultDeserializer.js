@@ -15,6 +15,8 @@ class ResultDeserializer {
       result.global_feedback = attributes.global_feedback;
     if (attributes.current_rank !== undefined) 
       result.current_rank = attributes.current_rank;
+    if (attributes.assessment_details !== undefined) 
+      result.assessment_details = attributes.assessment_details;
 
     return result;
   }
