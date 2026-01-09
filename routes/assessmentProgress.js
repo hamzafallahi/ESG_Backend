@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const assessmentProgressController = require('../controllers/AssessmentProgress.controller');
-const { create, update, getAll, delete: deleteValidation } = require('../validation/AssessmentProgress.rules.js');
+const { create, update, getAll, delete: deleteValidation, getMe, resetMe } = require('../validation/AssessmentProgress.rules.js');
 const AssessmentProgressDeserializer = require('../deserializer/AssessmentProgressDeserializer');
 const deserializeMiddleware = require('../middleware/deserializeMiddleware');
 const validate = require('../middleware/validationMiddleware');
 const {  requireAdmin } = require('../middleware/authMiddleware');
 
 // User routes - require authentication
-router.get('/me', assessmentProgressController.getCurrentUserProgress);
+router.get('/me', validate(getMe), assessmentProgressController.getCurrentUserProgress);
 router.patch('/me',  validate(update), deserializeMiddleware(AssessmentProgressDeserializer), assessmentProgressController.updateCurrentUserProgress);
-router.post('/me/reset',  assessmentProgressController.resetCurrentUserProgress);
+router.post('/me/reset', validate(resetMe), assessmentProgressController.resetCurrentUserProgress);
 
 // Admin routes - require admin role
 router.get('/', requireAdmin, validate(getAll), assessmentProgressController.getAll);

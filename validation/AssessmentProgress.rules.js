@@ -127,5 +127,17 @@ module.exports = {
     body: Joi.object().keys({}).length(0).messages({
       'object.length': 'GET requests should not contain a body'
     }),
+  },
+  getMe: {
+    headers: Joi.object().keys({}).unknown(true),
+    body: Joi.object().keys({}).length(0).messages({
+      'object.length': 'GET requests should not contain a body'
+    }),
+  },
+  resetMe: {
+    headers: Joi.object().keys({}).unknown(true),
+    body: Joi.object().keys({}).length(0).messages({
+      'object.length': 'POST requests for reset should not contain a body'
+    }),
   }
 };
