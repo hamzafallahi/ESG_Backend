@@ -14,6 +14,7 @@ const allowedFields = [
   "total_score",
   "global_feedback",
   "current_rank",
+  "assessment_details",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -79,7 +80,7 @@ const create = async (req, res, next) => {
     // This runs in the background so the response is sent immediately
     resultService.sendResultNotification(newResult)
       .then(result => {
-        console.log('Result notification sent: 1111111111111111111111111111111111', result);
+        console.log('Result notification sent:', result);
       })
       .catch(error => {
         console.error('Error sending result notification:', error);
@@ -125,10 +126,52 @@ const remove = async (req, res, next) => {
   }
 };
 
+// Get assessment details for a specific result (admin only)
+const getAssessmentDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await Result.findByPk(id, {
+      attributes: ['id', 'user_id', 'assessment_details', 'created_at']
+    });
+
+    if (!result) {
+      throw new NotFoundError("Result not found", "Result");
+    }
+
+    // Serialize similar to AssessmentProgress serializer format
+    const assessmentDetails = result.assessment_details || {};
+    
+    const serializedData = {
+      data: {
+        type: 'assessment_details',
+        id: result.id,
+        attributes: {
+          result_id: result.id,
+          user_id: result.user_id,
+          answers: assessmentDetails.answers || {},
+          current_page: assessmentDetails.current_page || 0,
+          ui_state: assessmentDetails.ui_state || {},
+          total_questions: assessmentDetails.total_questions || 0,
+          answered_questions: assessmentDetails.answered_questions || 0,
+          completion_percentage: assessmentDetails.completion_percentage || 0,
+          saved_at: assessmentDetails.saved_at || null,
+          result_created_at: result.created_at
+        }
+      }
+    };
+
+    res.json(serializedData);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAll,
   getById,
   create,
   update,
   remove,
+  getAssessmentDetails,
 };

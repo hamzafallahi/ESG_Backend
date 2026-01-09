@@ -5,6 +5,7 @@ const InboxMessageInlineSerializer = require('../serializer/InboxMessage.inline.
 const { createCrudOperations } = require('../utils/crudOperations.js');
 const NotFoundError = require('../error/exception/NotFound.js');
 const BusinessError = require("../error/BusinessError");
+const { Op } = require('sequelize');
 
 const allowedFields = [
   "id",
@@ -126,6 +127,33 @@ const getAllInboxMessagesByUser = async (req, res, next) => {
   }
 };
 
+// Check if current user has a pending retake request
+const checkPendingRetakeRequest = async (req, res, next) => {
+  try {
+    const userId = req.userId; // Get user ID from token
+    
+    // Check for retake_request messages with null or unresolved status
+    const pendingRequest = await InboxMessage.findOne({
+      where: {
+        sent_by_user_id: userId,
+        type: 'retake_request',
+        [Op.or]: [
+          { status: null },
+          { status: 'unresolved' }
+        ]
+      },
+      order: [['created_at', 'DESC']],
+    });
+    
+    res.status(200).json({
+      hasPendingRequest: !!pendingRequest,
+      pendingRequest: pendingRequest ? InboxMessageInlineSerializer.serialize(pendingRequest) : null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllInboxMessages,
   getInboxMessageById,
@@ -133,4 +161,5 @@ module.exports = {
   updateInboxMessage,
   deleteInboxMessage,
   getAllInboxMessagesByUser,
+  checkPendingRetakeRequest,
 };

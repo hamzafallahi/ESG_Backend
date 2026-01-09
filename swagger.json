@@ -1,0 +1,3787 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ESG Backend API - User Routes",
+    "description": "API for ESG Assessment Platform - User facing endpoints for authentication, profile management, and assessment content (categories, sections, questions)",
+    "version": "1.0.0",
+    "contact": {
+      "name": "ESG Backend Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API Version 1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "User authentication operations (signup, login, current user)"
+    },
+    {
+      "name": "profile",
+      "description": "User profile management operations"
+    },
+    {
+      "name": "categories",
+      "description": "ESG assessment categories"
+    },
+    {
+      "name": "sections",
+      "description": "Sections within ESG categories"
+    },
+    {
+      "name": "questions",
+      "description": "Assessment questions within sections"
+    },
+    {
+      "name": "assessment-progress",
+      "description": "User assessment progress tracking"
+    },
+    {
+      "name": "results",
+      "description": "Assessment results"
+    },
+    {
+      "name": "result-categories",
+      "description": "Category-level assessment results"
+    },
+    {
+      "name": "result-sections",
+      "description": "Section-level assessment results"
+    },
+    {
+      "name": "inbox-actions",
+      "description": "User inbox actions (retake requests, contact us, bug reports, support)"
+    }
+  ],
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Register a new user",
+        "description": "Create a new user account with organization details",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSignupRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "organization_name": "Acme Corporation",
+                    "phone_number": "+1234567890",
+                    "email": "user@example.com",
+                    "password": "securePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "User login",
+        "description": "Authenticate a user and receive a JWT token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLoginRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "email": "user@example.com",
+                    "password": "securePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Get current user",
+        "description": "Retrieve the currently authenticated user's information",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Current user data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": ["profile"],
+        "summary": "Get own profile",
+        "description": "Retrieve the current user's profile information",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return",
+            "schema": {
+              "type": "string",
+              "example": "organization_name,email,phone_number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["profile"],
+        "summary": "Update own profile",
+        "description": "Update the current user's profile information",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "users",
+                  "attributes": {
+                    "organization_name": "Updated Organization Name",
+                    "phone_number": "+0987654321"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["categories"],
+        "summary": "Get all categories",
+        "description": "Retrieve a paginated list of ESG assessment categories",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, name, name_fr, description, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "name,name_fr,description"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: name, name_fr, description, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[name]",
+            "in": "query",
+            "description": "Filter by name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (sections, result_categories)",
+            "schema": {
+              "type": "string",
+              "example": "sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{categoryId}": {
+      "get": {
+        "tags": ["categories"],
+        "summary": "Get category by ID",
+        "description": "Retrieve a specific category by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (sections, result_categories)",
+            "schema": {
+              "type": "string",
+              "example": "sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{categoryId}/sections": {
+      "get": {
+        "tags": ["categories", "sections"],
+        "summary": "Get sections by category",
+        "description": "Retrieve all sections belonging to a specific category",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, questions)",
+            "schema": {
+              "type": "string",
+              "example": "questions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sections in the category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sections": {
+      "get": {
+        "tags": ["sections"],
+        "summary": "Get all sections",
+        "description": "Retrieve a paginated list of all sections across categories",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, category_id, title, title_fr, description, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "title,title_fr,description"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: title, title_fr, description, category_id, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[category_id]",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, questions, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "category,questions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sections/{sectionId}": {
+      "get": {
+        "tags": ["sections"],
+        "summary": "Get section by ID",
+        "description": "Retrieve a specific section by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "description": "Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, questions, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "category,questions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Section details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sections/{sectionId}/questions": {
+      "get": {
+        "tags": ["sections", "questions"],
+        "summary": "Get questions by section",
+        "description": "Retrieve all questions belonging to a specific section",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "description": "Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section)",
+            "schema": {
+              "type": "string",
+              "example": "section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of questions in the section",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions": {
+      "get": {
+        "tags": ["questions"],
+        "summary": "Get all questions",
+        "description": "Retrieve a paginated list of all assessment questions",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return (id, section_id, text, text_fr, score_value, level, created_at, updated_at)",
+            "schema": {
+              "type": "string",
+              "example": "text,text_fr,score_value,level"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: text, text_fr, score_value, level, section_id, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "level"
+            }
+          },
+          {
+            "name": "filter[section_id]",
+            "in": "query",
+            "description": "Filter by section ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter[level]",
+            "in": "query",
+            "description": "Filter by question level",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section)",
+            "schema": {
+              "type": "string",
+              "example": "section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of questions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions/{questionId}": {
+      "get": {
+        "tags": ["questions"],
+        "summary": "Get question by ID",
+        "description": "Retrieve a specific question by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "description": "Question UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section)",
+            "schema": {
+              "type": "string",
+              "example": "section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Question details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Question not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessment-progress/me": {
+      "get": {
+        "tags": ["assessment-progress"],
+        "summary": "Get current user's assessment progress",
+        "description": "Retrieve the assessment progress for the currently authenticated user",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Assessment progress data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Assessment progress not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["assessment-progress"],
+        "summary": "Update current user's assessment progress",
+        "description": "Update the assessment progress for the currently authenticated user (answers, current page, UI state)",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentProgressUpdateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "assessment_progress",
+                  "attributes": {
+                    "answers": {"question-uuid-1": true, "question-uuid-2": false},
+                    "current_page": 2,
+                    "ui_state": {"collapsed_sections": []},
+                    "answered_questions": 10,
+                    "completion_percentage": 25.5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assessment progress updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessment-progress/me/reset": {
+      "post": {
+        "tags": ["assessment-progress"],
+        "summary": "Reset current user's assessment progress",
+        "description": "Reset all assessment progress for the currently authenticated user (clears answers, resets page to 0)",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Assessment progress reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/results": {
+      "get": {
+        "tags": ["results"],
+        "summary": "Get all results",
+        "description": "Retrieve a paginated list of assessment results",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma-separated list of fields to return",
+            "schema": {
+              "type": "string",
+              "example": "user_id,total_score,current_rank"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: id, user_id, total_score, current_rank, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-created_at"
+            }
+          },
+          {
+            "name": "filter[user_id]",
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (result_categories, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "result_categories,result_sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["results"],
+        "summary": "Create a new result",
+        "description": "Create a new assessment result. Validates user's next_allowed_assessment_date before creation.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "Result",
+                  "attributes": {
+                    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "total_score": 85,
+                    "global_feedback": "Good performance overall",
+                    "current_rank": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Result created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or assessment cooldown not elapsed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/results/{id}": {
+      "get": {
+        "tags": ["results"],
+        "summary": "Get result by ID",
+        "description": "Retrieve a specific result by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (result_categories, result_sections)",
+            "schema": {
+              "type": "string",
+              "example": "result_categories,result_sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["results"],
+        "summary": "Update a result",
+        "description": "Update an existing result",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["results"],
+        "summary": "Delete a result",
+        "description": "Soft delete a result",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Result deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-categories": {
+      "get": {
+        "tags": ["result-categories"],
+        "summary": "Get all result categories",
+        "description": "Retrieve a paginated list of category-level results",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "filter[result_id]",
+            "in": "query",
+            "description": "Filter by result ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter[category_id]",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: id, result_id, category_id, score, level, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-score"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, results)",
+            "schema": {
+              "type": "string",
+              "example": "category,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of result categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["result-categories"],
+        "summary": "Create a result category",
+        "description": "Create a new category-level result entry",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultCategoryCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "ResultCategory",
+                  "attributes": {
+                    "result_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "category_id": "660e8400-e29b-41d4-a716-446655440001",
+                    "score": 75,
+                    "level": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Result category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-categories/{id}": {
+      "get": {
+        "tags": ["result-categories"],
+        "summary": "Get result category by ID",
+        "description": "Retrieve a specific result category by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (category, results)",
+            "schema": {
+              "type": "string",
+              "example": "category,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["result-categories"],
+        "summary": "Update a result category",
+        "description": "Update an existing result category",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultCategoryUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["result-categories"],
+        "summary": "Delete a result category",
+        "description": "Soft delete a result category",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Result category deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-sections": {
+      "get": {
+        "tags": ["result-sections"],
+        "summary": "Get all result sections",
+        "description": "Retrieve a paginated list of section-level results",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page[number]",
+            "in": "query",
+            "description": "Page number (0-indexed)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "page[size]",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "name": "filter[result_id]",
+            "in": "query",
+            "description": "Filter by result ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter[section_id]",
+            "in": "query",
+            "description": "Filter by section ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field (prefix with - for descending). Allowed: id, result_id, section_id, score, level, created_at, updated_at",
+            "schema": {
+              "type": "string",
+              "example": "-score"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section, results)",
+            "schema": {
+              "type": "string",
+              "example": "section,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of result sections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["result-sections"],
+        "summary": "Create a result section",
+        "description": "Create a new section-level result entry",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultSectionCreateRequest"
+              },
+              "example": {
+                "data": {
+                  "type": "ResultSection",
+                  "attributes": {
+                    "result_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "section_id": "770e8400-e29b-41d4-a716-446655440002",
+                    "score": 80,
+                    "level": 3
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Result section created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/result-sections/{id}": {
+      "get": {
+        "tags": ["result-sections"],
+        "summary": "Get result section by ID",
+        "description": "Retrieve a specific result section by its UUID",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include related resources (section, results)",
+            "schema": {
+              "type": "string",
+              "example": "section,results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result section details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["result-sections"],
+        "summary": "Update a result section",
+        "description": "Update an existing result section",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultSectionUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result section updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultSectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["result-sections"],
+        "summary": "Delete a result section",
+        "description": "Soft delete a result section",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Result Section UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Result section deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Result section not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/retake-request": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Request assessment retake",
+        "description": "Authenticated user requests to retake the assessment",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetakeRequestBody"
+              },
+              "example": {
+                "reason": "I would like to retake the assessment to improve my score"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Retake request submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or pending retake request already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/contact-us": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Submit contact us message",
+        "description": "Submit a contact us message (public endpoint, authentication optional)",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactUsRequestBody"
+              },
+              "example": {
+                "subject": "Question about ESG Assessment",
+                "organization_name": "Acme Corp",
+                "email": "contact@acme.com",
+                "message": "I have a question about the assessment process..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact message submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/bug-report": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Submit bug report",
+        "description": "Authenticated user submits a bug report",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugReportRequestBody"
+              },
+              "example": {
+                "category": "bug",
+                "subject": "Page not loading correctly",
+                "organization_name": "Acme Corp",
+                "email": "user@acme.com",
+                "message": "When I click on the assessment page, it shows a blank screen..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bug report submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-actions/support-request": {
+      "post": {
+        "tags": ["inbox-actions"],
+        "summary": "Submit support request",
+        "description": "Authenticated user submits a support request",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportRequestBody"
+              },
+              "example": {
+                "category": "support",
+                "subject": "Need help with assessment",
+                "organization_name": "Acme Corp",
+                "email": "user@acme.com",
+                "message": "I need assistance understanding the ESG criteria..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Support request submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbox-messages/check-pending-retake": {
+      "get": {
+        "tags": ["inbox-actions"],
+        "summary": "Check pending retake request",
+        "description": "Check if the current user has a pending retake request",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Pending retake status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "has_pending_request": {
+                          "type": "boolean",
+                          "description": "Whether user has a pending retake request"
+                        },
+                        "pending_request": {
+                          "type": "object",
+                          "nullable": true,
+                          "description": "The pending request details if exists"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserSignupRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["organization_name", "phone_number", "email", "password"],
+                "properties": {
+                  "organization_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Organization name"
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Phone number"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "Password (min 6 characters)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserLoginRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Password"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["users"],
+                "description": "Resource type"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Organization name"
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Phone number"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 100,
+                    "description": "New password (min 6 characters)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "users"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "User UUID"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "JWT authentication token"
+              }
+            }
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "users"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "organization_name": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "next_allowed_assessment_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "category"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Category name (English)"
+                  },
+                  "name_fr": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Category name (French)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Category description"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "section"
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "description": "Included related resources (when using include parameter)",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "CategoriesListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "category"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "name_fr": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "Total number of records"
+              },
+              "page": {
+                "type": "integer",
+                "description": "Current page number"
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "Number of items per page"
+              },
+              "totalPages": {
+                "type": "integer",
+                "description": "Total number of pages"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "first": {
+                "type": "string"
+              },
+              "last": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string",
+                "nullable": true
+              },
+              "next": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "SectionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "section"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "category_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Parent category UUID"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Section title (English)"
+                  },
+                  "title_fr": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Section title (French)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Section description"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "example": "category"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "questions": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "question"
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "description": "Included related resources",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "SectionsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "section"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "category_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "title_fr": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "pageSize": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "first": {
+                "type": "string"
+              },
+              "last": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string",
+                "nullable": true
+              },
+              "next": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "QuestionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "question"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "section_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Parent section UUID"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Question text (English)"
+                  },
+                  "text_fr": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Question text (French)"
+                  },
+                  "score_value": {
+                    "type": "integer",
+                    "description": "Score value for this question"
+                  },
+                  "level": {
+                    "type": "integer",
+                    "description": "Question difficulty level"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "section": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "example": "section"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "description": "Included related resources",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "QuestionsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "question"
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "section_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "text_fr": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "score_value": {
+                      "type": "integer"
+                    },
+                    "level": {
+                      "type": "integer"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "pageSize": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string"
+              },
+              "first": {
+                "type": "string"
+              },
+              "last": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string",
+                "nullable": true
+              },
+              "next": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "HTTP status code"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Error title"
+                },
+                "detail": {
+                  "type": "string",
+                  "description": "Error detail message"
+                },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "pointer": {
+                      "type": "string",
+                      "description": "JSON pointer to the field that caused the error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AssessmentProgressResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "assessment_progress"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "answers": {
+                    "type": "object",
+                    "description": "Object mapping question IDs to boolean answers",
+                    "additionalProperties": {
+                      "type": "boolean"
+                    }
+                  },
+                  "current_page": {
+                    "type": "integer",
+                    "description": "Current page index in the assessment"
+                  },
+                  "ui_state": {
+                    "type": "object",
+                    "description": "UI state information (collapsed sections, etc.)"
+                  },
+                  "total_questions": {
+                    "type": "integer",
+                    "description": "Total number of questions in the assessment"
+                  },
+                  "answered_questions": {
+                    "type": "integer",
+                    "description": "Number of questions answered"
+                  },
+                  "completion_percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Percentage of assessment completed (0-100)"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AssessmentProgressUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["assessment_progress"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "object",
+                    "description": "Object mapping question IDs to boolean answers",
+                    "additionalProperties": {
+                      "type": "boolean"
+                    }
+                  },
+                  "current_page": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "ui_state": {
+                    "type": "object"
+                  },
+                  "total_questions": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "answered_questions": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "completion_percentage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "result"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "total_score": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Total assessment score"
+                  },
+                  "global_feedback": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Overall feedback text"
+                  },
+                  "current_rank": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Current ranking"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "result_categories": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "example": "result_category" },
+                            "id": { "type": "string", "format": "uuid" }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "result_sections": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "example": "result_section" },
+                            "id": { "type": "string", "format": "uuid" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
+        }
+      },
+      "ResultsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "result" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": { "type": "string", "format": "uuid" },
+                    "total_score": { "type": "integer", "nullable": true },
+                    "global_feedback": { "type": "string", "nullable": true },
+                    "current_rank": { "type": "integer", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "ResultCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["Result"]
+              },
+              "attributes": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": {
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "total_score": { "type": "integer", "nullable": true },
+                  "global_feedback": { "type": "string", "nullable": true },
+                  "current_rank": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["Result"]
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "string", "format": "uuid" },
+                  "total_score": { "type": "integer", "nullable": true },
+                  "global_feedback": { "type": "string", "nullable": true },
+                  "current_rank": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "result_category" },
+              "id": { "type": "string", "format": "uuid" },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "result" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  },
+                  "category": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "category" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "ResultCategoriesListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "result_category" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "result_id": { "type": "string", "format": "uuid" },
+                    "category_id": { "type": "string", "format": "uuid" },
+                    "score": { "type": "integer", "nullable": true },
+                    "level": { "type": "integer", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "ResultCategoryCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultCategory"] },
+              "attributes": {
+                "type": "object",
+                "required": ["result_id", "category_id"],
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultCategoryUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultCategory"] },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultSectionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "result_section" },
+              "id": { "type": "string", "format": "uuid" },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "section_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "result" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  },
+                  "section": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "type": { "type": "string", "example": "section" },
+                          "id": { "type": "string", "format": "uuid" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "included": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "ResultSectionsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "example": "result_section" },
+                "id": { "type": "string", "format": "uuid" },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "result_id": { "type": "string", "format": "uuid" },
+                    "section_id": { "type": "string", "format": "uuid" },
+                    "score": { "type": "integer", "nullable": true },
+                    "level": { "type": "integer", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": { "type": "string" },
+              "first": { "type": "string" },
+              "last": { "type": "string" },
+              "prev": { "type": "string", "nullable": true },
+              "next": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "ResultSectionCreateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type", "attributes"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultSection"] },
+              "attributes": {
+                "type": "object",
+                "required": ["result_id", "section_id"],
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "section_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ResultSectionUpdateRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "type": "string", "enum": ["ResultSection"] },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "result_id": { "type": "string", "format": "uuid" },
+                  "section_id": { "type": "string", "format": "uuid" },
+                  "score": { "type": "integer", "nullable": true },
+                  "level": { "type": "integer", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      },
+      "InboxMessageResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "inbox_message" },
+              "id": { "type": "string", "format": "uuid" },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "sent_by_user_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "sent_by_admin_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "sent_by_super_admin_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "type": {
+                    "type": "string",
+                    "enum": ["contact_us", "retake_request", "support_request", "bug_report", "result_feedback"]
+                  },
+                  "payload": { "type": "object" },
+                  "status": {
+                    "type": "string",
+                    "enum": ["unresolved", "resolved"],
+                    "nullable": true
+                  },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RetakeRequestBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "Optional reason for requesting a retake"
+          }
+        }
+      },
+      "ContactUsRequestBody": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Subject of the message"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Organization name (optional for visitors)"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Contact email (optional for authenticated users)"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Message content"
+          }
+        }
+      },
+      "BugReportRequestBody": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "default": "bug",
+            "description": "Bug category"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Bug report subject"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Bug description"
+          }
+        }
+      },
+      "SupportRequestBody": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "default": "support",
+            "description": "Support category"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Support request subject"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Support request details"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token obtained from /auth/login or /auth/signup"
+      }
+    }
+  }
+}
