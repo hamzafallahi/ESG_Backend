@@ -5,9 +5,11 @@ const { create, update, getAll, delete: deleteValidation } = require('../validat
 const AdminDeserializer = require('../deserializer/admindeserializer.js');
 const deserializeMiddleware = require('../middleware/deserializeMiddleware');
 const validate = require('../middleware/validationMiddleware');
-const { requireSuperAdmin } = require('../middleware/authMiddleware');
+const { requireSuperAdmin,requireAdmin  } = require('../middleware/authMiddleware');
 
-// All admin routes require super admin role (authentication already handled in index.js)
+router.patch('/me',requireAdmin,validate(update),deserializeMiddleware(AdminDeserializer),adminController.updateMe);
+
+// All below admin routes require super admin role (authentication already handled in index.js)
 router.use(requireSuperAdmin);
 
 router.get('/', validate(getAll), adminController.getAllAdmins);

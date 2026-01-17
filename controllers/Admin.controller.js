@@ -157,10 +157,61 @@ const deleteAdmin = async (req, res, next) => {
   }
 };
 
+
+// Update admin's own profile (ADMIN ONLY)
+const updateMe = async (req, res, next) => {
+  try {
+    const adminId = req.userId;
+    const admin = await Admin.findByPk(adminId);
+
+    if (!admin) {
+      throw new NotFoundError('Admin not found', 'Admin');
+    }
+
+    const businessError = new BusinessError(400, "Bad Request");
+
+    // Username uniqueness
+    if (req.body.username && req.body.username !== admin.username) {
+      const exists =
+        await Admin.findOne({ where: { username: req.body.username } }) ||
+        await SuperAdmin.findOne({ where: { username: req.body.username } });
+
+      if (exists) {
+        businessError.addError('attributes.username', 'Username already exists');
+      }
+    }
+
+    // Email uniqueness
+    if (req.body.email && req.body.email !== admin.email) {
+      const exists =
+        await Admin.findOne({ where: { email: req.body.email } }) ||
+        await SuperAdmin.findOne({ where: { email: req.body.email } });
+
+      if (exists) {
+        businessError.addError('attributes.email', 'Email already exists');
+      }
+    }
+
+    // ❌ Admin cannot change these fields himself
+    delete req.body.created_by;
+    delete req.body.is_active;
+
+    if (businessError.errors.length > 0) throw businessError;
+
+   req.params.id = adminId;
+    await crudOps.update(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
 module.exports = {
   getAllAdmins,
   getAdminById,
   createAdmin,
   updateAdmin,
   deleteAdmin,
+  updateMe
 };
