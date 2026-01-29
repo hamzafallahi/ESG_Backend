@@ -115,7 +115,8 @@ module.exports = (sequelize, DataTypes) => {
             ui_state: {},
             total_questions: 0,
             answered_questions: 0,
-            completion_percentage: 0.00
+            completion_percentage: 0.00,
+            started_at: null
           });
         }
       }

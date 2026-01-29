@@ -65,6 +65,7 @@ module.exports = (sequelize, type) => {
             total_questions: progress.total_questions,
             answered_questions: progress.answered_questions,
             completion_percentage: parseFloat(progress.completion_percentage),
+            started_at: progress.started_at,
             saved_at: new Date().toISOString()
           };
           
@@ -76,7 +77,8 @@ module.exports = (sequelize, type) => {
             current_page: 0,
             ui_state: {},
             answered_questions: 0,
-            completion_percentage: 0.00
+            completion_percentage: 0.00,
+            started_at: null
           });
         }
       }

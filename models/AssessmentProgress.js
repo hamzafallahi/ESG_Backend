@@ -114,6 +114,10 @@ module.exports = (sequelize, DataTypes) => {
           msg: 'Completion percentage cannot exceed 100'
         }
       }
+    },
+    started_at: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     sequelize,

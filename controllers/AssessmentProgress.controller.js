@@ -15,6 +15,7 @@ const allowedFields = [
   "total_questions",
   "answered_questions",
   "completion_percentage",
+  "started_at",
   "created_at",
   "updated_at",
 ];
@@ -153,10 +154,17 @@ const updateCurrentUserProgress = async (req, res, next) => {
         current_page: req.body.current_page || 0,
         ui_state: req.body.ui_state || {},
         total_questions: req.body.total_questions || 0,
+        started_at: req.body.answers && Object.keys(req.body.answers).length > 0 ? new Date() : null,
       });
     } else {
       // Prevent changing user_id
       delete req.body.user_id;
+      
+      // Set started_at when user first starts answering questions
+      if (!progress.started_at && req.body.answers && Object.keys(req.body.answers).length > 0) {
+        req.body.started_at = new Date();
+      }
+      
       await progress.update(req.body);
     }
 
@@ -197,13 +205,14 @@ const resetCurrentUserProgress = async (req, res, next) => {
       throw new NotFoundError('Assessment progress not found', 'AssessmentProgress');
     }
 
-    // Reset to default values
+    // Reset to default values and set started_at to null
     await progress.update({
       answers: {},
       current_page: 0,
       ui_state: {},
       answered_questions: 0,
       completion_percentage: 0.00,
+      started_at: null, // Reset to null - will be set when user starts new assessment
     });
 
     const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());

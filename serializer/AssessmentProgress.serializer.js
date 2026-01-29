@@ -9,6 +9,7 @@ const AssessmentProgressSerializer = new Serializer('assessment_progress', {
     'total_questions',
     'answered_questions',
     'completion_percentage',
+    'started_at',
     'created_at',
     'updated_at',
     'user'
