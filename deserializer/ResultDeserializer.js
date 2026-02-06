@@ -18,6 +18,14 @@ class ResultDeserializer {
     if (attributes.assessment_details !== undefined) 
       result.assessment_details = attributes.assessment_details;
 
+    // Submission data for level calculation (not persisted directly on Result)
+    if (attributes.category_scores !== undefined)
+      result.category_scores = attributes.category_scores;
+    if (attributes.subcategory_scores !== undefined)
+      result.subcategory_scores = attributes.subcategory_scores;
+    if (attributes.answers !== undefined)
+      result.answers = attributes.answers;
+
     return result;
   }
 }

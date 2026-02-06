@@ -32,7 +32,14 @@ const resultDataSchema = {
         completion_percentage: Joi.number().min(0).max(100),
         started_at: Joi.date().iso().allow(null),
         saved_at: Joi.date().iso()
-      }).allow(null)
+      }).allow(null),
+      // Submission data for level calculation (processed by backend, not persisted on Result)
+      category_scores: Joi.object().pattern(Joi.string(), Joi.number()).allow(null),
+      subcategory_scores: Joi.object().pattern(
+        Joi.string(),
+        Joi.object().pattern(Joi.string(), Joi.number())
+      ).allow(null),
+      answers: Joi.object().pattern(Joi.string(), Joi.number()).allow(null),
     })
     .required(),
 };
