@@ -11,7 +11,7 @@ module.exports = {
     // Set started_at to created_at for existing records
     await queryInterface.sequelize.query(`
       UPDATE assessment_progress
-      SET started_at = created_at
+      SET started_at = NULL
       WHERE started_at IS NULL
     `);
   },
