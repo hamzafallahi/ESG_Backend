@@ -8,12 +8,6 @@ module.exports = {
       allowNull: true
     });
 
-    // Set started_at to created_at for existing records
-    await queryInterface.sequelize.query(`
-      UPDATE assessment_progress
-      SET started_at = NULL
-      WHERE started_at IS NULL
-    `);
   },
 
   async down (queryInterface, Sequelize) {
