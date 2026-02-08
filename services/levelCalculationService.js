@@ -38,7 +38,7 @@ const computeSectionLevel = (questions, questionScores) => {
     .sort((a, b) => a - b);
 
   // Find the highest level where ALL questions have a positive score (> 0)
-  let highestLevel = levels[0] || 1; // Start with the lowest available level
+  let highestLevel = 0;
   for (const level of levels) {
     const levelQuestions = questionsByLevel[level];
     const allAchieved = levelQuestions.every(
