@@ -22,7 +22,24 @@ const resultDataSchema = {
       total_score: Joi.number().integer().allow(null),
       global_feedback: Joi.string().allow(null),
       current_rank: Joi.number().integer().allow(null),
-      assessment_details: Joi.object().allow(null)
+      assessment_details: Joi.object().keys({
+        user_id: Joi.string().uuid(),
+        answers: Joi.object(),
+        current_page: Joi.number().integer().min(0),
+        ui_state: Joi.object(),
+        total_questions: Joi.number().integer().min(0),
+        answered_questions: Joi.number().integer().min(0),
+        completion_percentage: Joi.number().min(0).max(100),
+        started_at: Joi.date().iso().allow(null),
+        saved_at: Joi.date().iso()
+      }).allow(null),
+      // Submission data for level calculation (processed by backend, not persisted on Result)
+      category_scores: Joi.object().pattern(Joi.string(), Joi.number()).allow(null),
+      subcategory_scores: Joi.object().pattern(
+        Joi.string(),
+        Joi.object().pattern(Joi.string(), Joi.number())
+      ).allow(null),
+      answers: Joi.object().pattern(Joi.string(), Joi.number()).allow(null),
     })
     .required(),
 };
@@ -35,7 +52,17 @@ const resultUpdateDataSchema = {
       total_score: Joi.number().integer().allow(null),
       global_feedback: Joi.string().allow(null),
       current_rank: Joi.number().integer().allow(null),
-      assessment_details: Joi.object().allow(null)
+      assessment_details: Joi.object().keys({
+        user_id: Joi.string().uuid(),
+        answers: Joi.object(),
+        current_page: Joi.number().integer().min(0),
+        ui_state: Joi.object(),
+        total_questions: Joi.number().integer().min(0),
+        answered_questions: Joi.number().integer().min(0),
+        completion_percentage: Joi.number().min(0).max(100),
+        started_at: Joi.date().iso().allow(null),
+        saved_at: Joi.date().iso()
+      }).allow(null)
     }),
 };
 
@@ -53,7 +80,12 @@ const getAllQuerySchema = Joi.object()
     }, "field validation"),
 
     page: Joi.object().keys({
-      size: Joi.number().integer().min(1).max(100).default(10),
+      size: Joi.number().integer().custom((value, helpers) => {
+        if (value === -1 || value >= 1) {
+          return value;
+        }
+        return helpers.error('number.min', { limit: 1 });
+      }).default(10),
       number: Joi.number().integer().min(0).default(0),
     }),
 

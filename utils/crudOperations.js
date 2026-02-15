@@ -130,18 +130,21 @@ const createCrudOperations = ({
         ? parseInt(req.query["page"]["number"], 10)
         : 0;
 
+      // Check if returning all elements (pageSize === -1)
+      const returnAll = pageSize === -1;
+
       if (
         isNaN(pageSize) ||
         isNaN(pageNumber) ||
-        pageSize < 1 ||
+        (pageSize < 1 && pageSize !== -1) ||
         pageNumber < 0
       ) {
         businessError.addError(
           "page",
-          "Page size must be greater than 0 and page number must be non-negative"
+          "Page size must be greater than 0 (or -1 for all elements) and page number must be non-negative"
         );
       }
-      const offset = pageNumber * pageSize;
+      const offset = returnAll ? 0 : pageNumber * pageSize;
 
       // Handle includes
       let hasIncludes = false;
@@ -247,7 +250,7 @@ const createCrudOperations = ({
           attributes,
           order,
           offset,
-          limit: pageSize,
+          ...(returnAll ? {} : { limit: pageSize }),
           where: whereCondition,
           include,
           distinct: true,
@@ -258,10 +261,10 @@ const createCrudOperations = ({
           distinct: true,
         }),
       ]);
-      const totalPages = Math.ceil(total_count / pageSize);
+      const totalPages = returnAll ? 1 : Math.ceil(total_count / pageSize);
       const meta = {
-        page_number: pageNumber,
-        page_size: pageSize,
+        page_number: returnAll ? 0 : pageNumber,
+        page_size: returnAll ? total_count : pageSize,
         total_count: total_count,
         total_pages: totalPages,
       };

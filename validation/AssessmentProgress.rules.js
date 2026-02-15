@@ -9,6 +9,7 @@ const ALLOWED_FIELDS = [
   "total_questions",
   "answered_questions",
   "completion_percentage",
+  "started_at",
   "created_at",
   "updated_at",
 ];
@@ -19,6 +20,7 @@ const ALLOWED_SORT_FIELDS = [
   "total_questions",
   "answered_questions",
   "completion_percentage",
+  "started_at",
   "created_at",
   "updated_at"
 ];
@@ -34,6 +36,7 @@ const assessmentProgressDataSchema = {
       total_questions: Joi.number().integer().min(0).default(0),
       answered_questions: Joi.number().integer().min(0).default(0),
       completion_percentage: Joi.number().min(0).max(100).default(0),
+      started_at: Joi.date().iso().allow(null),
     })
     .required(),
 };
@@ -49,6 +52,7 @@ const assessmentProgressUpdateDataSchema = {
       total_questions: Joi.number().integer().min(0),
       answered_questions: Joi.number().integer().min(0),
       completion_percentage: Joi.number().min(0).max(100),
+      started_at: Joi.date().iso().allow(null),
     }),
 };
 
@@ -66,7 +70,12 @@ const getAllQuerySchema = Joi.object()
     }, "field validation"),
 
     page: Joi.object().keys({
-      size: Joi.number().integer().min(1).max(100).default(10),
+      size: Joi.number().integer().custom((value, helpers) => {
+        if (value === -1 || (value >= 1 && value <= 100)) {
+          return value;
+        }
+        return helpers.error('number.base');
+      }).default(10),
       number: Joi.number().integer().min(0).default(0),
     }),
 
