@@ -56,8 +56,13 @@ const indexRules = {
       new RegExp(`^(-)?${ALLOWED_SORT_FIELDS.join("|")}$`)
     ),
     page: Joi.object({
-      number: Joi.number().integer().min(1),
-      size: Joi.number().integer().min(1).max(100),
+      number: Joi.number().integer().min(0),
+      size: Joi.number().integer().custom((value, helpers) => {
+        if (value === -1 || (value >= 1 && value <= 100)) {
+          return value;
+        }
+        return helpers.error('number.base');
+      }),
     }),
   }),
 };

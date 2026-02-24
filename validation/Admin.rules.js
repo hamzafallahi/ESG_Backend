@@ -54,7 +54,12 @@ const getAllQuerySchema = Joi.object()
     }, "field validation"),
 
     page: Joi.object().keys({
-      size: Joi.number().integer().min(1).max(100).default(10),
+      size: Joi.number().integer().custom((value, helpers) => {
+        if (value === -1 || (value >= 1 && value <= 100)) {
+          return value;
+        }
+        return helpers.error('number.base');
+      }).default(10),
       number: Joi.number().integer().min(0).default(0),
     }),
 
