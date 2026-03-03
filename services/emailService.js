@@ -1,10 +1,67 @@
-const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer');
+const { ConfidentialClientApplication } = require('@azure/msal-node');
 
-// Initialize SendGrid with API key
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error('SENDGRID_API_KEY is not defined in environment variables');
-}
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Microsoft Azure AD OAuth2 Configuration
+const msalConfig = {
+  auth: {
+    clientId: process.env.AZURE_CLIENT_ID,
+    clientSecret: process.env.AZURE_CLIENT_SECRET,
+    authority: process.env.AZURE_AUTHORITY,
+  },
+};
+
+// MSAL client for acquiring tokens
+let msalClient = null;
+
+/**
+ * Initialize MSAL client
+ */
+const getMsalClient = () => {
+  if (!msalClient) {
+    if (!process.env.AZURE_CLIENT_ID || !process.env.AZURE_CLIENT_SECRET || !process.env.AZURE_TENANT_ID) {
+      throw new Error('Azure AD OAuth2 credentials are not defined in environment variables (AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID)');
+    }
+    msalClient = new ConfidentialClientApplication(msalConfig);
+  }
+  return msalClient;
+};
+
+/**
+ * Get OAuth2 access token for SMTP
+ */
+const getAccessToken = async () => {
+  const client = getMsalClient();
+  
+  const tokenRequest = {
+    scopes: ['https://outlook.office365.com/.default'],
+  };
+
+  try {
+    const response = await client.acquireTokenByClientCredential(tokenRequest);
+    return response.accessToken;
+  } catch (error) {
+    console.error('Error acquiring OAuth2 token:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create nodemailer transporter with OAuth2
+ */
+const createTransporter = async () => {
+  const accessToken = await getAccessToken();
+  
+  return nodemailer.createTransport({
+    host: process.env.SMTP_SERVER,
+    port: parseInt(process.env.SMTP_PORT),
+    secure: false, // STARTTLS
+    auth: {
+      type: 'OAuth2',
+      user: process.env.FROM_EMAIL,
+      accessToken: accessToken,
+    },
+  });
+};
 
 /**
  * Generate the HTML email content with result data
@@ -807,7 +864,7 @@ const generateResultsPageHtml = (organizationName, resultData) => {
 };
 
 /**
- * Send ESG results email via SendGrid
+ * Send ESG results email via Microsoft SMTP with OAuth2
  * @param {string} email - Recipient email address
  * @param {string} organizationName - Organization name
  * @param {string} phoneNumber - Phone number
@@ -818,29 +875,28 @@ const sendResultEmail = async (email, organizationName, phoneNumber, resultData)
     const emailHtml = generateEmailHtml(organizationName, resultData);
     const resultsPageHtml = generateResultsPageHtml(organizationName, resultData);
 
-    const msg = {
+    // Create OAuth2 transporter
+    const transporter = await createTransporter();
+
+    const mailOptions = {
+      from: process.env.FROM_EMAIL,
       to: email,
-      from: process.env.FROM_EMAIL_GMAIL || 'esg@taa.tn',
       subject: "Résultats de votre évaluation ESG - TAA",
       html: emailHtml,
       attachments: [
         {
-          content: Buffer.from(resultsPageHtml).toString('base64'),
+          content: resultsPageHtml,
           filename: 'ESG_Results.html',
-          type: 'text/html',
-          disposition: 'attachment'
+          contentType: 'text/html',
         }
       ]
     };
 
-    await sgMail.send(msg);
-    console.log(`Email sent successfully to ${email}`);
-    return { success: true, message: 'Email sent successfully' };
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully to ${email}. MessageId: ${info.messageId}`);
+    return { success: true, message: 'Email sent successfully', messageId: info.messageId };
   } catch (error) {
     console.error('Error sending email:', error);
-    if (error.response) {
-      console.error('SendGrid error details:', error.response.body);
-    }
     throw error;
   }
 };
