@@ -9,8 +9,9 @@ const User = db.user;
  * - Saves data to Google Sheets
  * @param {string} userId - User ID
  * @param {object} resultData - Result data object
+ * @param {string|number} resultId - The DB result ID used to build the report URL
  */
-const processResultData = async (userId, resultData) => {
+const processResultData = async (userId, resultData, resultId) => {
   try {
     // Fetch user information
     const user = await User.findByPk(userId);
@@ -29,7 +30,7 @@ const processResultData = async (userId, resultData) => {
 
     // Send email and append to Google Sheets in parallel
     const [emailResult, sheetsResult] = await Promise.allSettled([
-      emailService.sendResultEmail(email, organization_name, phone_number, resultData),
+      emailService.sendResultEmail(email, organization_name, phone_number, resultData, resultId),
       googleSheetsService.appendResultToSheet(organization_name, phone_number, email, resultData)
     ]);
 
@@ -176,7 +177,7 @@ const sendResultNotification = async (result) => {
     const resultData = calculateResultData(completeResult);
 
     // Process and send result
-    const processResult = await processResultData(result.user_id, resultData);
+    const processResult = await processResultData(result.user_id, resultData, result.id);
 
     return processResult;
   } catch (error) {
