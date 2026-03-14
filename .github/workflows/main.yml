@@ -22,6 +22,11 @@ jobs:
           script: |
             mkdir -p /var/www/esg/ESG_Backend
             cd /var/www/esg/ESG_Backend
-            git pull origin develop
-            docker compose down
+            if [ ! -d .git ]; then
+              git clone -b develop https://github.com/hamzafallahi/ESG_Backend.git .
+            else
+              git fetch origin develop
+              git reset --hard origin/develop
+            fi
+            docker compose down || true
             docker compose up -d --build
