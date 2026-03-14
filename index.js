@@ -41,7 +41,7 @@ if (process.env.NODE_ENV !== "production") {
 app.use(errorHandler);
 
 app.listen(config.port, () => {
-  console.log(`Server now is running on port ${config.port}`);
+  console.log(`Server now is running on ${config.port}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`Loading env from: env/.env.${process.env.NODE_ENV}`);
 });
