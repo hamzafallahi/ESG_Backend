@@ -1,6 +1,48 @@
 version: '3.8'
 
 services:
+  umami-db:
+    image: postgres:15-alpine
+    container_name: taa-umami-db
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:-umami_secure_password_change_me}
+    volumes:
+      - umami-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - postgres
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: taa-umami
+    ports:
+      - "3100:3000"  # Umami dashboard accessible at localhost:3100
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD:-umami_secure_password_change_me}@umami-db:5432/umami
+      DATABASE_TYPE: postgresql
+      APP_SECRET: ${UMAMI_APP_SECRET:-replace_this_with_random_string_min_32_chars}
+      # Optional: disable telemetry
+      DISABLE_TELEMETRY: ${UMAMI_DISABLE_TELEMETRY:-1}
+      # Optional: enable debug mode
+      # DEBUG: 1
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/heartbeat || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
   app:
     build: .
     command:
@@ -59,3 +101,5 @@ networks:
 volumes:
   postgres:
   pgadmin:
+  umami-db-data:
+    driver: local
