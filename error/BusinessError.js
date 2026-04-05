@@ -8,7 +8,7 @@ class BusinessError extends Error {
     this.errors = [];
   }
 
-  
+
   addError(field, detail) {
     this.errors.push({
       status: this.statusCode.toString(),
