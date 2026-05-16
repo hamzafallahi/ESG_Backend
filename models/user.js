@@ -32,12 +32,41 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    surname: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    position: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    website_url: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     organization_name: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notEmpty: {
           msg: 'Organization name cannot be empty'
+        }
+      }
+    },
+    organisation_phone_number: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    organisation_email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isEmail: {
+          msg: 'Must be a valid email address'
         }
       }
     },
@@ -49,6 +78,54 @@ module.exports = (sequelize, DataTypes) => {
           msg: 'Phone number cannot be empty'
         }
       }
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    postal_code: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    state: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    country: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    tax_number: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    linkedin: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    facebook: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    twitter: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    logo_url: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    video_url: {
+      type: DataTypes.STRING,
+      allowNull: true
     },
     email: {
       type: DataTypes.STRING,

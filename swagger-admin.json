@@ -594,7 +594,7 @@
           {
             "name": "fields",
             "in": "query",
-            "description": "Comma-separated list of fields to return (id, organization_name, phone_number, email, next_allowed_assessment_date, created_at, updated_at)",
+            "description": "Comma-separated list of fields to return (id, name, surname, position, website_url, organization_name, organisation_phone_number, organisation_email, phone_number, address, postal_code, city, state, country, description, tax_number, linkedin, facebook, twitter, logo_url, video_url, email, next_allowed_assessment_date, created_at, updated_at)",
             "schema": {
               "type": "string",
               "example": "organization_name,email,phone_number"
@@ -603,7 +603,7 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "Sort field (prefix with - for descending). Allowed: organization_name, email, next_allowed_assessment_date, created_at, updated_at",
+            "description": "Sort field (prefix with - for descending). Allowed: name, surname, position, website_url, organization_name, organisation_phone_number, organisation_email, phone_number, address, postal_code, city, state, country, description, tax_number, linkedin, facebook, twitter, logo_url, video_url, email, next_allowed_assessment_date, created_at, updated_at",
             "schema": {
               "type": "string",
               "example": "-created_at"
@@ -675,6 +675,9 @@
                 "data": {
                   "type": "users",
                   "attributes": {
+                    "name": "Alex",
+                    "surname": "Morgan",
+                    "position": "Sustainability Lead",
                     "organization_name": "New Organization",
                     "phone_number": "+1234567890",
                     "email": "newuser@example.com",
@@ -1776,13 +1779,68 @@
               "attributes": {
                 "type": "object",
                 "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "surname": {
+                    "type": "string"
+                  },
+                  "position": {
+                    "type": "string"
+                  },
+                  "website_url": {
+                    "type": "string"
+                  },
                   "organization_name": {
                     "type": "string",
                     "description": "Organization name"
                   },
+                  "organisation_phone_number": {
+                    "type": "string"
+                  },
+                  "organisation_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
                   "phone_number": {
                     "type": "string",
                     "description": "Phone number"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "postal_code": {
+                    "type": "string"
+                  },
+                  "city": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "country": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "tax_number": {
+                    "type": "string"
+                  },
+                  "linkedin": {
+                    "type": "string"
+                  },
+                  "facebook": {
+                    "type": "string"
+                  },
+                  "twitter": {
+                    "type": "string"
+                  },
+                  "logo_url": {
+                    "type": "string"
+                  },
+                  "video_url": {
+                    "type": "string"
                   },
                   "email": {
                     "type": "string",
@@ -1821,8 +1879,26 @@
                 "attributes": {
                   "type": "object",
                   "properties": {
+                    "name": { "type": "string" },
+                    "surname": { "type": "string" },
+                    "position": { "type": "string" },
+                    "website_url": { "type": "string" },
                     "organization_name": { "type": "string" },
+                    "organisation_phone_number": { "type": "string" },
+                    "organisation_email": { "type": "string", "format": "email" },
                     "phone_number": { "type": "string" },
+                    "address": { "type": "string" },
+                    "postal_code": { "type": "string" },
+                    "city": { "type": "string" },
+                    "state": { "type": "string" },
+                    "country": { "type": "string" },
+                    "description": { "type": "string" },
+                    "tax_number": { "type": "string" },
+                    "linkedin": { "type": "string" },
+                    "facebook": { "type": "string" },
+                    "twitter": { "type": "string" },
+                    "logo_url": { "type": "string" },
+                    "video_url": { "type": "string" },
                     "email": { "type": "string", "format": "email" },
                     "next_allowed_assessment_date": { "type": "string", "format": "date-time", "nullable": true },
                     "created_at": { "type": "string", "format": "date-time" },
@@ -1870,15 +1946,87 @@
                 "type": "object",
                 "required": ["organization_name", "phone_number", "email", "password"],
                 "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "surname": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "position": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "website_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
                   "organization_name": {
                     "type": "string",
                     "maxLength": 255,
                     "description": "Organization name"
                   },
+                  "organisation_phone_number": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "organisation_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
                   "phone_number": {
                     "type": "string",
                     "maxLength": 20,
                     "description": "Phone number"
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "city": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "country": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "tax_number": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "linkedin": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "facebook": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "twitter": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "logo_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "video_url": {
+                    "type": "string",
+                    "maxLength": 2048
                   },
                   "email": {
                     "type": "string",
@@ -1912,13 +2060,85 @@
               "attributes": {
                 "type": "object",
                 "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "surname": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "position": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "website_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
                   "organization_name": {
                     "type": "string",
                     "maxLength": 255
                   },
+                  "organisation_phone_number": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "organisation_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
                   "phone_number": {
                     "type": "string",
                     "maxLength": 20
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "city": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "country": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "tax_number": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "linkedin": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "facebook": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "twitter": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "logo_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "video_url": {
+                    "type": "string",
+                    "maxLength": 2048
                   },
                   "email": {
                     "type": "string",
