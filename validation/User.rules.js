@@ -73,7 +73,7 @@ const userDataSchema = {
       state: Joi.string().max(100).required(),
       country: Joi.string().max(100).required(),
       description: Joi.string().max(2000),
-      tax_number: Joi.string().max(100),
+      tax_number: Joi.string().max(100).required(),
       linkedin: Joi.string().max(255),
       facebook: Joi.string().max(255),
       twitter: Joi.string().max(255),

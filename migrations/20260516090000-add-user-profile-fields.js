@@ -52,7 +52,7 @@ module.exports = {
     });
     await queryInterface.addColumn('users', 'tax_number', {
       type: Sequelize.STRING,
-      allowNull: true
+      allowNull: false
     });
     await queryInterface.addColumn('users', 'linkedin', {
       type: Sequelize.STRING,

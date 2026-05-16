@@ -105,7 +105,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     tax_number: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: false
     },
     linkedin: {
       type: DataTypes.STRING,
