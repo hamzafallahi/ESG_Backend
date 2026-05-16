@@ -16,6 +16,7 @@
     "docs": "apidoc -i ./ -e node_modules/ -t ./node_modules/apidoc-contenttype-plugin/template/ --parse-parsers apicontenttype=./node_modules/apidoc-contenttype-plugin/api_content_type.js"
   },
   "dependencies": {
+    "@azure/msal-node": "^5.2.1",
     "@sendgrid/mail": "^8.1.5",
     "amqplib": "^0.10.9",
     "axios": "^1.11.0",
