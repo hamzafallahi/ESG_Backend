@@ -4,11 +4,11 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.addColumn('users', 'name', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'surname', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'position', {
       type: Sequelize.STRING,
@@ -24,7 +24,7 @@ module.exports = {
     });
     await queryInterface.addColumn('users', 'organisation_email', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'address', {
       type: Sequelize.STRING,
@@ -32,19 +32,19 @@ module.exports = {
     });
     await queryInterface.addColumn('users', 'postal_code', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'city', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'state', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'country', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'description', {
       type: Sequelize.TEXT,
@@ -52,7 +52,7 @@ module.exports = {
     });
     await queryInterface.addColumn('users', 'tax_number', {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: true
     });
     await queryInterface.addColumn('users', 'linkedin', {
       type: Sequelize.STRING,
@@ -73,6 +73,52 @@ module.exports = {
     await queryInterface.addColumn('users', 'video_url', {
       type: Sequelize.STRING,
       allowNull: true
+    });
+
+    await queryInterface.sequelize.query(`
+      UPDATE users
+      SET
+        name = COALESCE(name, ''),
+        surname = COALESCE(surname, ''),
+        organisation_email = COALESCE(organisation_email, email, ''),
+        postal_code = COALESCE(postal_code, ''),
+        city = COALESCE(city, ''),
+        state = COALESCE(state, ''),
+        country = COALESCE(country, ''),
+        tax_number = COALESCE(tax_number, '')
+    `);
+
+    await queryInterface.changeColumn('users', 'name', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'surname', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'organisation_email', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'postal_code', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'city', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'state', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'country', {
+      type: Sequelize.STRING,
+      allowNull: false
+    });
+    await queryInterface.changeColumn('users', 'tax_number', {
+      type: Sequelize.STRING,
+      allowNull: false
     });
   },
 

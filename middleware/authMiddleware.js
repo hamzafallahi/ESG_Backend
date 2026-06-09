@@ -3,13 +3,27 @@ const config = require('../config/app-config');
 const db = require('../models');
 
 /**
+ * Helper: extract token from cookie (supports req.cookies or raw Cookie header)
+ */
+const getTokenFromCookie = (req) => {
+  if (req.cookies && req.cookies.token) return req.cookies.token;
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return null;
+  const parts = cookieHeader.split(';').map(c => c.trim());
+  for (const p of parts) {
+    const [k, ...v] = p.split('=');
+    if (k === 'token') return decodeURIComponent(v.join('='));
+  }
+  return null;
+};
+
+/**
  * Middleware to verify JWT token and attach user information to request
+ * Token is expected in the 'token' cookie only.
  */
 const authenticate = async (req, res, next) => {
   try {
-    // Get the token from the header
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = getTokenFromCookie(req);
 
     if (!token) {
       return res.status(401).json({ 
@@ -90,48 +104,37 @@ const requireUser = (req, res, next) => {
 
 /**
  * Optional authentication middleware
- * Attaches user info if token is provided and valid, but doesn't require it
+ * Attaches user info if a valid token cookie exists, otherwise continues
  */
 const optionalAuthenticate = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = getTokenFromCookie(req);
 
     if (!token) {
-      // No token provided, continue without user info
-      req.userId = null;
-      req.userRole = null;
       return next();
     }
 
-    // Try to verify token
     const decoded = jwt.verify(token, config.JWT_SECRET);
     req.userId = decoded.id;
     req.userRole = decoded.role;
-    
-    next();
+
+    return next();
   } catch (error) {
-    // Invalid token, continue without user info
-    req.userId = null;
-    req.userRole = null;
-    next();
+    return next();
   }
 };
 
+
 /**
  * SSE-specific authentication middleware
- * Supports tokens from query parameters (for browser SSE connections) or Authorization header
+ * Uses cookie-based auth first, with legacy query/header fallback
  */
 const authenticateSSE = async (req, res, next) => {
   try {
-    // Try query parameter first (common for SSE)
-    let token = req.query.token;
-    
-    // Fall back to Authorization header
-    if (!token) {
-      const authHeader = req.headers.authorization;
-      token = authHeader && authHeader.split(' ')[1];
-    }
+    // Prefer cookie auth for SSE
+    let token = getTokenFromCookie(req);
+
+   
 
     if (!token) {
       return res.status(401).json({ 

@@ -12,7 +12,6 @@ const TechnicalError = require('../error/TechnicalError');
 // Signup - Register a new user
 exports.signup = async (req, res, next) => {
   try {
-    console.log('Signup request body:', req.body);
     // Check if user with this email already exists
     const existingUser = await User.findOne({
       where: { email: req.body.email }
@@ -34,12 +33,18 @@ exports.signup = async (req, res, next) => {
       { expiresIn: config.JWT_EXPIRATION }
     );
 
-    // Return user data with token
+    // Set token as secure, HTTP-only cookie (also return user data)
+    const decoded = jwt.decode(token) || {};
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
+    };
+    res.cookie('token', token, cookieOptions);
+
     const serializedUser = AuthSerializer.serialize(user.toJSON());
-    return res.status(201).json({
-      ...serializedUser,
-      token
-    });
+    return res.status(201).json(serializedUser);
   } catch (error) {
     next(error);
   }
@@ -74,12 +79,18 @@ exports.login = async (req, res, next) => {
       { expiresIn: config.JWT_EXPIRATION }
     );
 
-    // Return user data with token
+    // Set token as secure, HTTP-only cookie (also return user data)
+    const decoded = jwt.decode(token) || {};
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
+    };
+    res.cookie('token', token, cookieOptions);
+
     const serializedUser = AuthSerializer.serialize(user.toJSON());
-    return res.status(200).json({
-      ...serializedUser,
-      token
-    });
+    return res.status(200).json(serializedUser);
   } catch (error) {
     next(error);
   }
@@ -145,7 +156,16 @@ exports.adminLogin = async (req, res, next) => {
       { expiresIn: config.JWT_EXPIRATION }
     );
 
-    // Return admin data with token (without password)
+    // Set token as secure, HTTP-only cookie and return admin data (without password)
+    const decoded = jwt.decode(token) || {};
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
+    };
+    res.cookie('token', token, cookieOptions);
+
     const userData = user.toJSON();
     return res.status(200).json({
       data: {
@@ -159,8 +179,7 @@ exports.adminLogin = async (req, res, next) => {
           is_active: userData.is_active,
           role: role
         }
-      },
-      token
+      }
     });
   } catch (error) {
     next(error);
