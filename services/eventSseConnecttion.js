@@ -2,6 +2,14 @@
 const { v4: uuidv4 } = require('uuid');
 
 const KEEP_ALIVE_INTERVAL_MS = 25000;
+const ALLOWED_ORIGINS = ['http://localhost:5173'];
+
+const resolveAllowedOrigin = (origin) => {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return origin;
+  }
+  return ALLOWED_ORIGINS[0];
+};
 
 /**
  * SSE connection handler for regular users
@@ -14,14 +22,17 @@ exports.Event = (req, res) => {
     return;
   }
 
+  const origin = resolveAllowedOrigin(req.headers.origin);
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
     'X-Accel-Buffering': 'no',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Vary': 'Origin'
   });
 
   if (typeof res.flushHeaders === 'function') res.flushHeaders();
@@ -89,14 +100,17 @@ exports.AdminEvent = (req, res) => {
     return;
   }
 
+  const origin = resolveAllowedOrigin(req.headers.origin);
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
     'X-Accel-Buffering': 'no',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Vary': 'Origin'
   });
 
   if (typeof res.flushHeaders === 'function') res.flushHeaders();

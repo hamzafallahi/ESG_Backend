@@ -4,6 +4,8 @@ const ResultSerializer = new Serializer('results', {
   attributes: [
     'user_id', 
     'total_score', 
+    'global_level',
+    'core_score',
     'global_feedback', 
     'current_rank', 
     'assessment_details',
@@ -16,11 +18,11 @@ const ResultSerializer = new Serializer('results', {
   keyForAttribute: 'snake_case',
   result_categories: {
     ref: 'id',
-    attributes: ['result_id', 'category_id', 'score', 'level', 'created_at', 'updated_at']
+    attributes: ['result_id', 'category_id', 'score', 'created_at', 'updated_at']
   },
   result_sections: {
     ref: 'id', 
-    attributes: ['result_id', 'section_id', 'score', 'level', 'created_at', 'updated_at']
+    attributes: ['result_id', 'section_id', 'score', 'created_at', 'updated_at']
   }
 });
 

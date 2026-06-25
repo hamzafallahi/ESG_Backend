@@ -2,6 +2,7 @@ const db = require('../models');
 const Result = db.results;
 const ResultCategory = db.result_categories;
 const ResultSection = db.result_sections;
+const Justification = db.justification;
 const Category = db.category;
 const Section = db.section;
 const User = db.user;
@@ -11,7 +12,7 @@ const { createCrudOperations } = require( "../utils/crudOperations.js");
 const NotFoundError = require( "../error/exception/NotFound.js");
 const BusinessError = require("../error/BusinessError");
 const resultService = require('../services/resultService');
-const { calculateAllLevels } = require('../services/levelCalculationService');
+const { calculateAllScoresAndLevels } = require('../services/levelCalculationService');
 
 const allowedFields = [
   "id",
@@ -55,53 +56,96 @@ const getById = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const userId = req.body.user_id;
-    
+
     // Validate user exists and check next_allowed_assessment_date
     const user = await User.findByPk(userId);
-    
+
     if (!user) {
       throw new NotFoundError("User not found", "User");
     }
-    
+
     // Check if user is allowed to submit a result
     if (user.next_allowed_assessment_date !== null) {
       const currentDate = new Date();
       const nextAllowedDate = new Date(user.next_allowed_assessment_date);
-      
+
       if (currentDate < nextAllowedDate) {
         const businessError = new BusinessError(403, "Forbidden");
         businessError.addError(
-          'attributes.user_id', 
+          'attributes.user_id',
           `You are not allowed to submit a result until ${nextAllowedDate.toISOString()}`
         );
         throw businessError;
       }
     }
-    
-    // Extract submission data from the request body
-    const categoryScores = req.body.category_scores || {};
-    const subcategoryScores = req.body.subcategory_scores || {};
+
+    // answers format: { questionId: { type: 'YES'|'NN'|'NA'|'NAC', nac_percentage?: number, justification?: {...} } }
     const answers = req.body.answers || {};
+    const globalFeedback = req.body.global_feedback || null;
+
+    // Calculate all scores (percentages) and the global maturity level
+    // server-side, weighted by the company's sub-sector.
+    const {
+      globalScore,
+      globalLevel,
+      coreScore,
+      categoryScores,
+      subcategoryScores,
+      unansweredCount,
+    } = await calculateAllScoresAndLevels(answers, user.sub_sector);
+
+    // All questions must be answered before submission
+    if (unansweredCount > 0) {
+      const businessError = new BusinessError(400, "Bad Request");
+      businessError.addError(
+        'attributes.answers',
+        `${unansweredCount} question(s) have not been answered. All questions must be answered before submission.`
+      );
+      throw businessError;
+    }
 
     // Create the main result record
     const newResult = await Result.create({
-      user_id: req.body.user_id,
-      total_score: req.body.total_score,
-      global_feedback: req.body.global_feedback,
-      current_rank: req.body.current_rank,
+      user_id: userId,
+      total_score: globalScore,
+      global_level: globalLevel,
+      core_score: coreScore,
+      global_feedback: globalFeedback,
+      current_rank: null,
     });
 
-    // Build question scores map from flat answers
-    // Answers are now keyed by question UUID directly from the frontend
-    const questionScores = answers;
+    // Create justification records for YES answers that include justification data
+    const justificationPromises = Object.entries(answers)
+      .filter(([, ans]) => {
+        const j = ans.justification;
+        // Only create justification if all required fields are present
+        return (
+          ans.type === 'YES' &&
+          j &&
+          j.proof_type &&
+          j.description && j.description.length >= 50 &&
+          j.document_date
+        );
+      })
+      .map(([questionId, ans]) => {
+        const j = ans.justification;
+        return Justification.create({
+          question_id: questionId,
+          proof_type: j.proof_type,
+          description: j.description,
+          document_date: j.document_date,
+          reference_number: j.reference_number || null,
+          evaluator_comment: j.evaluator_comment || null,
+          attachments: j.attachment_urls || [],
+        }).catch((err) => {
+          console.error(`[Result] Failed to create justification for question ${questionId}:`, err.message);
+          return null;
+        });
+      });
 
-    // Calculate levels for all sections and categories on the backend
-    const { categoryLevels, sectionLevels } = await calculateAllLevels(subcategoryScores, questionScores);
+    await Promise.all(justificationPromises);
 
-    console.log('📊 Computed category levels:', categoryLevels);
-    console.log('📊 Computed section levels:', sectionLevels);
-
-    // Fetch category and section mappings
+    // Fetch category and section mappings for creating sub-records
     const [allCategories, allSections] = await Promise.all([
       Category.findAll({ attributes: ['id', 'name', 'name_fr'] }),
       Section.findAll({ attributes: ['id', 'title', 'title_fr'] }),
@@ -119,42 +163,35 @@ const create = async (req, res, next) => {
       if (sec.title_fr) sectionTitleToId[sec.title_fr] = sec.id;
     });
 
-    // Create result-category records with computed levels
-    const categoryPromises = Object.entries(categoryScores).map(([categoryName, score]) => {
-      const categoryId = categoryNameToId[categoryName];
-      if (!categoryId) {
-        console.warn(`[WARNING] Category not found in database: "${categoryName}"`);
-        return null;
-      }
-      const level = categoryLevels[categoryName] || 0;
-
-      return ResultCategory.create({
-        result_id: newResult.id,
-        category_id: categoryId,
-        score: score,
-        level: level,
+    // Create result-category records — only English category names to avoid duplicates
+    const seenCategoryIds = new Set();
+    const categoryPromises = Object.entries(categoryScores)
+      .map(([categoryName, score]) => {
+        const categoryId = categoryNameToId[categoryName];
+        if (!categoryId || seenCategoryIds.has(categoryId)) return null;
+        seenCategoryIds.add(categoryId);
+        return ResultCategory.create({
+          result_id: newResult.id,
+          category_id: categoryId,
+          score,
+        });
       });
-    });
 
     await Promise.all(categoryPromises.filter(Boolean));
 
-    // Create result-section records with computed levels
+    // Create result-section records — deduplicate by section id
+    const seenSectionIds = new Set();
     const sectionPromises = [];
-    Object.entries(subcategoryScores).forEach(([categoryName, subcategories]) => {
+    Object.entries(subcategoryScores).forEach(([, subcategories]) => {
       Object.entries(subcategories).forEach(([sectionName, score]) => {
         const sectionId = sectionTitleToId[sectionName];
-        if (!sectionId) {
-          console.warn(`[WARNING] Section not found in database: "${sectionName}"`);
-          return;
-        }
-        const level = (sectionLevels[categoryName] && sectionLevels[categoryName][sectionName]) || 0;
-
+        if (!sectionId || seenSectionIds.has(sectionId)) return;
+        seenSectionIds.add(sectionId);
         sectionPromises.push(
           ResultSection.create({
             result_id: newResult.id,
             section_id: sectionId,
-            score: score,
-            level: level,
+            score,
           })
         );
       });
@@ -162,8 +199,8 @@ const create = async (req, res, next) => {
 
     await Promise.all(sectionPromises);
 
-    let serializedData = ResultSerializer.serialize(newResult);
-    
+    const serializedData = ResultSerializer.serialize(newResult);
+
     // Send email and save to Google Sheets asynchronously (non-blocking)
     resultService.sendResultNotification(newResult)
       .then(result => {
@@ -172,7 +209,7 @@ const create = async (req, res, next) => {
       .catch(error => {
         console.error('Error sending result notification:', error);
       });
-    
+
     res.status(201).json(serializedData);
   } catch (error) {
     next(error);

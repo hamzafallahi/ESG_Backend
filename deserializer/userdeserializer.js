@@ -6,6 +6,7 @@ class UserDeserializer {
     if (attributes.name !== undefined) result.name = attributes.name;
     if (attributes.surname !== undefined) result.surname = attributes.surname;
     if (attributes.position !== undefined) result.position = attributes.position;
+    if (attributes.sub_sector !== undefined) result.sub_sector = attributes.sub_sector;
     if (attributes.website_url !== undefined) result.website_url = attributes.website_url;
     if (attributes.organization_name !== undefined) result.organization_name = attributes.organization_name;
     if (attributes.organisation_phone_number !== undefined) result.organisation_phone_number = attributes.organisation_phone_number;

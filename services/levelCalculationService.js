@@ -1,96 +1,63 @@
 const db = require('../models');
+const {
+  SECTION_TITLE_TO_CODE,
+  pillarForCode,
+  getWeightConfig,
+  percentageToLevel,
+  applyCoreCap,
+} = require('../config/esgScoring');
+
 const Question = db.question;
 const Section = db.section;
 const Category = db.category;
 
 /**
- * Compute the maturity level for a single section (subcategory).
- * 
- * Questions in a section have levels (1, 2, 3, 4 corresponding to N1-N4).
- * A level is "achieved" only when ALL questions at that level have a positive score (> 0).
- * Levels are evaluated sequentially: if any question at level N2 scores 0, 
- * the section stops at N1 even if N3/N4 are fully scored.
- * 
- * @param {Array} questions - Array of question objects with { id, level, score_value }
- * @param {Record<string, number>} questionScores - Map of question_id -> user's score for that question
- * @returns {number} The highest achieved level (1-4), or 0 if N/A
+ * Resolve the domain code for a section. Prefers an explicit `code` column,
+ * then falls back to a mapping on the English/French title.
  */
-const computeSectionLevel = (questions, questionScores) => {
-  if (!questions || questions.length === 0) return 0;
-
-  // Check if any questions have been answered
-  const hasAnyAnswer = questions.some(q => questionScores[q.id] !== undefined);
-  if (!hasAnyAnswer) return 0;
-
-  // Group questions by level
-  const questionsByLevel = {};
-  questions.forEach(q => {
-    const level = q.level;
-    if (!questionsByLevel[level]) {
-      questionsByLevel[level] = [];
-    }
-    questionsByLevel[level].push(q);
-  });
-
-  // Sort levels ascending (1, 2, 3, 4)
-  const levels = Object.keys(questionsByLevel)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  // Find the highest level where ALL questions have a positive score (> 0)
-  let highestLevel = 0;
-  for (const level of levels) {
-    const levelQuestions = questionsByLevel[level];
-    const allAchieved = levelQuestions.every(
-      q => questionScores[q.id] !== undefined && questionScores[q.id] > 0
-    );
-
-    if (allAchieved) {
-      highestLevel = level;
-    } else {
-      // Stop at the first level that's not fully achieved
-      break;
-    }
-  }
-
-  return highestLevel;
+const resolveSectionCode = (section) => {
+  return (
+    section.code ||
+    SECTION_TITLE_TO_CODE[section.title] ||
+    SECTION_TITLE_TO_CODE[section.title_fr] ||
+    null
+  );
 };
 
 /**
- * Compute the maturity level for a category.
- * Category level = minimum level among all its sections.
- * If any section is 0 (N/A), the entire category is 0 (N/A).
- * 
- * @param {Array<number>} sectionLevels - Array of section level numbers
- * @returns {number} The category level (min of all section levels)
+ * Calculate every score (as a percentage) and the single global maturity level
+ * from a structured answer map, weighted by the company's sub-sector.
+ *
+ * Answer format per question:
+ *   { type: 'YES'|'NN'|'NA'|'NAC', nac_percentage?: number }
+ *
+ * Per-question contribution to a section ratio:
+ *   YES  -> full score_value, included in denominator
+ *   NN   -> 0 achieved, included in denominator
+ *   NA   -> excluded from denominator (non-core). In a core section NA is
+ *           treated as NN (0 achieved, kept in denominator).
+ *   NAC  -> round(score_value * nac_percentage / 100), included in denominator
+ *
+ * Aggregation:
+ *   sectionRatio = achieved / denominator                          (0-1)
+ *   sectionPct   = round(sectionRatio * 100)                        (0-100)
+ *   pillarPct    = Σ(weight * ratio) / Σ(weight) over pillar        (0-100)
+ *   globalScore  = Σ(weight * ratio) / TOTAL_WEIGHT * 100           (0-100)
+ *   coreScore    = Σ(weight * ratio) / Σ(weight) over core domains  (0-100)
+ *
+ * The global maturity level is derived from globalScore, then capped at N3
+ * unless the Core aggregate reaches 60%.
+ *
+ * @param {Record<string, { type: string, nac_percentage?: number }>} answers
+ * @param {string|null} subSector
  */
-const computeCategoryLevel = (sectionLevels) => {
-  if (!sectionLevels || sectionLevels.length === 0) return 0;
-
-  // If any section is N/A (0), the whole category is N/A
-  if (sectionLevels.some(level => level === 0)) return 0;
-
-  return Math.min(...sectionLevels);
-};
-
-/**
- * Calculate levels for all sections and categories given user answers.
- * 
- * Fetches questions from the database grouped by section/category,
- * then computes levels based on the user's answer scores.
- * 
- * @param {Record<string, Record<string, number>>} subcategoryScores - Scores per subcategory: { categoryName: { sectionName: score } }
- * @param {Record<string, number>} questionScores - Map of question_id -> user's score. If not provided, falls back to flat answer mapping.
- * @returns {Promise<{ categoryLevels: Record<string, number>, sectionLevels: Record<string, Record<string, number>> }>}
- */
-const calculateAllLevels = async (subcategoryScores, questionScores = {}) => {
-  // Fetch all sections with their questions and parent categories
+const calculateAllScoresAndLevels = async (answers, subSector) => {
   const sections = await Section.findAll({
     include: [
       {
         model: Question,
         as: 'questions',
-        attributes: ['id', 'level', 'score_value'],
+        attributes: ['id', 'score_value'],
       },
       {
         model: Category,
@@ -100,82 +67,162 @@ const calculateAllLevels = async (subcategoryScores, questionScores = {}) => {
     ],
   });
 
-  // Build section name -> id mapping and category name -> id mapping
-  const sectionLevelsResult = {}; // { categoryName: { sectionName: levelNumber } }
-  const categoryLevelsResult = {}; // { categoryName: levelNumber }
+  const { weights, total } = getWeightConfig(subSector);
 
-  // Group sections by category
-  const sectionsByCategory = {};
-  sections.forEach(section => {
-    const categoryName = section.category?.name;
-    const categoryNameFr = section.category?.name_fr;
-    if (!categoryName) return;
+  let unansweredCount = 0;
 
-    if (!sectionsByCategory[categoryName]) {
-      sectionsByCategory[categoryName] = [];
-    }
-    sectionsByCategory[categoryName].push(section);
+  // Per-domain ratio (0-1), keyed by domain code.
+  const domainRatios = {};
+  const coreCodes = new Set();
 
-    // Also map French name for lookup
-    if (categoryNameFr && categoryNameFr !== categoryName) {
-      if (!sectionsByCategory[categoryNameFr]) {
-        sectionsByCategory[categoryNameFr] = [];
-      }
-      sectionsByCategory[categoryNameFr].push(section);
-    }
-  });
+  const categoryScores = {};      // pillar percentage, keyed EN (+ FR)
+  const subcategoryScores = {};   // { catName: { secTitle: pct } } EN (+ FR)
 
-  // Calculate level for each section
+  const setNested = (obj, catKey, secKey, value) => {
+    if (!obj[catKey]) obj[catKey] = {};
+    obj[catKey][secKey] = value;
+  };
+
   for (const section of sections) {
-    const categoryName = section.category?.name;
-    const categoryNameFr = section.category?.name_fr;
-    if (!categoryName) continue;
+    const catName = section.category?.name;
+    const catNameFr = section.category?.name_fr;
+    if (!catName) continue;
 
-    const sectionTitle = section.title;
-    const sectionTitleFr = section.title_fr;
+    const secTitle = section.title;
+    const secTitleFr = section.title_fr;
+    const isCore = section.core === true;
+    const code = resolveSectionCode(section);
     const questions = section.questions || [];
 
-    const level = computeSectionLevel(questions, questionScores);
+    let sectionAchieved = 0;
+    let sectionDenominator = 0;
 
-    // Store under English category name
-    if (!sectionLevelsResult[categoryName]) {
-      sectionLevelsResult[categoryName] = {};
-    }
-    sectionLevelsResult[categoryName][sectionTitle] = level;
+    for (const q of questions) {
+      const answer = answers[q.id];
 
-    // Also store by French section title under English category
-    if (sectionTitleFr && sectionTitleFr !== sectionTitle) {
-      sectionLevelsResult[categoryName][sectionTitleFr] = level;
-    }
-
-    // Also store under French category name (so lookups from either locale work)
-    if (categoryNameFr && categoryNameFr !== categoryName) {
-      if (!sectionLevelsResult[categoryNameFr]) {
-        sectionLevelsResult[categoryNameFr] = {};
+      if (!answer || !answer.type) {
+        unansweredCount++;
+        continue;
       }
-      sectionLevelsResult[categoryNameFr][sectionTitle] = level;
-      if (sectionTitleFr && sectionTitleFr !== sectionTitle) {
-        sectionLevelsResult[categoryNameFr][sectionTitleFr] = level;
+
+      const scoreValue = q.score_value || 0;
+
+      switch (answer.type) {
+        case 'YES':
+          sectionAchieved += scoreValue;
+          sectionDenominator += scoreValue;
+          break;
+
+        case 'NN':
+          sectionDenominator += scoreValue;
+          break;
+
+        case 'NA':
+          if (isCore) {
+            // Core section: NA is not allowed — treat it as NN.
+            sectionDenominator += scoreValue;
+          }
+          break;
+
+        case 'NAC': {
+          const pct = Math.min(100, Math.max(0, answer.nac_percentage || 0));
+          sectionAchieved += Math.round(scoreValue * pct / 100);
+          sectionDenominator += scoreValue;
+          break;
+        }
+
+        default:
+          unansweredCount++;
+      }
+    }
+
+    const sectionRatio = sectionDenominator > 0 ? sectionAchieved / sectionDenominator : 0;
+    const sectionPct = Math.round(sectionRatio * 100);
+
+    if (code) {
+      domainRatios[code] = sectionRatio;
+      if (isCore) coreCodes.add(code);
+    }
+
+    // Section percentage, indexed under EN + FR category / section names.
+    setNested(subcategoryScores, catName, secTitle, sectionPct);
+    if (secTitleFr && secTitleFr !== secTitle) {
+      setNested(subcategoryScores, catName, secTitleFr, sectionPct);
+    }
+    if (catNameFr && catNameFr !== catName) {
+      setNested(subcategoryScores, catNameFr, secTitle, sectionPct);
+      if (secTitleFr && secTitleFr !== secTitle) {
+        setNested(subcategoryScores, catNameFr, secTitleFr, sectionPct);
       }
     }
   }
 
-  // Calculate category levels (min of all section levels).
-  // Duplicate values (from EN/FR section titles under the same category) are safe
-  // because computeCategoryLevel uses Math.min, which is idempotent for duplicates.
-  Object.keys(sectionLevelsResult).forEach(categoryName => {
-    const sectionLevels = Object.values(sectionLevelsResult[categoryName]);
-    categoryLevelsResult[categoryName] = computeCategoryLevel(sectionLevels);
+  // Weighted percentage over a set of domain codes.
+  const weightedPct = (codes) => {
+    let weightedSum = 0;
+    let weightSum = 0;
+    codes.forEach((code) => {
+      const w = weights[code] || 0;
+      const r = domainRatios[code] || 0;
+      weightedSum += w * r;
+      weightSum += w;
+    });
+    return weightSum > 0 ? (weightedSum / weightSum) * 100 : 0;
+  };
+
+  // Pillar (category) percentages.
+  const pillarCodes = { Environment: [], Social: [], Governance: [] };
+  Object.keys(domainRatios).forEach((code) => {
+    const pillar = pillarForCode(code);
+    if (pillar && pillarCodes[pillar]) pillarCodes[pillar].push(code);
   });
 
+  const pillarScores = {
+    Environment: Math.round(weightedPct(pillarCodes.Environment)),
+    Social: Math.round(weightedPct(pillarCodes.Social)),
+    Governance: Math.round(weightedPct(pillarCodes.Governance)),
+  };
+
+  // Map pillar scores onto category names (EN + FR) for result_categories.
+  const allCategories = await Category.findAll({ attributes: ['name', 'name_fr'] });
+  allCategories.forEach((cat) => {
+    const pillarPct = pillarScores[cat.name];
+    if (pillarPct !== undefined) {
+      categoryScores[cat.name] = pillarPct;
+      if (cat.name_fr) categoryScores[cat.name_fr] = pillarPct;
+    }
+  });
+
+  // Global weighted score (SG) over all domains using the sub-sector total.
+  let globalWeightedSum = 0;
+  Object.keys(domainRatios).forEach((code) => {
+    globalWeightedSum += (weights[code] || 0) * (domainRatios[code] || 0);
+  });
+  const globalScoreExact = total > 0 ? (globalWeightedSum / total) * 100 : 0;
+  const globalScore = Math.round(globalScoreExact);
+
+  // Aggregate Core-domain score and the level gate.
+  const coreScoreExact = weightedPct([...coreCodes]);
+  const coreScore = Math.round(coreScoreExact);
+
+  const rawGlobalLevel = percentageToLevel(globalScoreExact);
+  const globalLevel = applyCoreCap(rawGlobalLevel, coreScoreExact);
+
   return {
-    categoryLevels: categoryLevelsResult,
-    sectionLevels: sectionLevelsResult,
+    globalScore,
+    globalLevel,
+    rawGlobalLevel,
+    coreScore,
+    pillarScores,
+    categoryScores,
+    subcategoryScores,
+    unansweredCount,
   };
 };
 
 module.exports = {
-  computeSectionLevel,
-  computeCategoryLevel,
-  calculateAllLevels,
+  percentageToLevel,
+  applyCoreCap,
+  calculateAllScoresAndLevels,
 };
+

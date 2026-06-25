@@ -8,6 +8,21 @@ module.exports = (sequelize, DataTypes) => {
         as: 'section',
         onDelete: 'CASCADE'
       });
+      Question.hasMany(models.justification, {
+        foreignKey: 'question_id',
+        as: 'justifications',
+        onDelete: 'CASCADE'
+      });
+      Question.belongsToMany(models.rsci, {
+        through: {
+          model: 'question_rscis',
+          timestamps: true,
+          underscored: true
+        },
+        foreignKey: 'question_id',
+        otherKey: 'rsci_id',
+        as: 'rscis'
+      });
     }
   }
   Question.init({
@@ -33,10 +48,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     score_value: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    level: {
       type: DataTypes.INTEGER,
       allowNull: false
     }

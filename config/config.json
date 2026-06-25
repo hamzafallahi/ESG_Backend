@@ -14,33 +14,5 @@
     "host": "postgres",
     "port": 5432,
     "dialect": "postgres"
-  },
-  "test": {
-    "username": "postgres",
-    "password": "null",
-    "database": "taa_db",
-    "host": "dpg-d4096buuk2gs739t0m6g-a-postgres.render.com",
-    "port": 5432,
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
-    }
-  },
-  "production": {
-    "username": "postgres",
-    "password": "changeme",
-    "database": "taa_db",
-    "host": "dpg-d4096buuk2gs739t0m6g-a-postgres.render.com",
-    "port": 5432,
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
-    }
   }
 }

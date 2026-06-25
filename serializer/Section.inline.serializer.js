@@ -5,7 +5,9 @@ const SectionInlineSerializer = createInlineSerializer('section', {
     'category_id',
     'title',
     'title_fr', 
-    'description', 
+    'description',
+    'core',
+    'code',
     'created_at', 
     'updated_at', 
     'deleted_at'
@@ -17,11 +19,17 @@ const SectionInlineSerializer = createInlineSerializer('section', {
     },
     questions: {
       type: 'question',
-      attributes: ['section_id', 'text', 'text_fr', 'score_value', 'level', 'created_at', 'updated_at']
+      attributes: ['section_id', 'text', 'text_fr', 'score_value', 'created_at', 'updated_at'],
+      relationships: {
+        rscis: {
+          type: 'rsci',
+          attributes: ['code', 'title', 'created_at', 'updated_at']
+        }
+      }
     },
     result_sections: {
       type: 'result_section',
-      attributes: ['result_id', 'section_id', 'score', 'level', 'created_at', 'updated_at']
+      attributes: ['result_id', 'section_id', 'score', 'created_at', 'updated_at']
     }
   }
 });

@@ -15,6 +15,12 @@ module.exports = (sequelize, type) => {
     total_score: {
       type: type.INTEGER
     },
+    global_level: {
+      type: type.STRING
+    },
+    core_score: {
+      type: type.INTEGER
+    },
     global_feedback: {
       type: type.TEXT
     },

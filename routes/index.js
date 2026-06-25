@@ -8,6 +8,7 @@ const resultSectionRoutes = require('./resultSection');
 const categoryRoutes = require('./categories');
 const sectionRoutes = require('./sections');
 const questionRoutes = require('./questions');
+const rsciRoutes = require('./rscis');
 const authRoutes = require('./auth');
 const adminRoutes = require('./admins');
 const superAdminRoutes = require('./superadmins');
@@ -19,6 +20,7 @@ const settingsRoutes = require('./settings');
 const inboxMessageRoutes = require('./inboxMessages');
 const messageReadRoutes = require('./messageReads');
 const inboxActionsRoutes = require('./inboxActions');
+const uploadRoutes = require('./upload');
 const router = express.Router();
 
 // Public routes (no authentication required)
@@ -39,6 +41,7 @@ router.use('/result-sections', resultSectionRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
+router.use('/rscis', rsciRoutes);
 router.use('/admins', adminRoutes);
 router.use('/super-admins', superAdminRoutes);
 router.use('/users', userRoutes);
@@ -47,5 +50,6 @@ router.use('/assessment-progress', assessmentProgressRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/inbox-messages', inboxMessageRoutes);
 router.use('/message-reads', messageReadRoutes);
+router.use('/upload', uploadRoutes);
 
 module.exports = router;    

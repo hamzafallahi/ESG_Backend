@@ -1,6 +1,7 @@
 const db = require('../models');
 const Question = db.question;
 const Section = db.section;
+const Rsci = db.rsci;
 const QuestionSerializer = require('../serializer/questionserializer.js');
 const QuestionInlineSerializer = require('../serializer/Question.inline.serializer.js');
 const { createCrudOperations } = require('../utils/crudOperations.js');
@@ -13,7 +14,6 @@ const allowedFields = [
   "text",
   "text_fr",
   "score_value",
-  "level",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -24,9 +24,9 @@ const crudOps = createCrudOperations({
   modelName: "Question",
   Serializer: QuestionSerializer,
   InlineSerializer: QuestionInlineSerializer,
-  allowedIncludes: ["section"],
+  allowedIncludes: ["section", "justifications", "rscis"],
   allowedFields,
-  defaultIncludes: ["section"],
+  defaultIncludes: ["section", "justifications", "rscis"],
 });
 
 // CRUD operations for questions by section (with parent relationship)
@@ -35,9 +35,9 @@ const crudOpsBySection = createCrudOperations({
   modelName: "Question",
   Serializer: QuestionSerializer,
   InlineSerializer: QuestionInlineSerializer,
-  allowedIncludes: ["section"],
+  allowedIncludes: ["section", "justifications", "rscis"],
   allowedFields,
-  defaultIncludes: ["section"],
+  defaultIncludes: ["section", "justifications", "rscis"],
   parentIdField: "section_id",
 });
 
@@ -90,11 +90,6 @@ const createQuestion = async (req, res, next) => {
       businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
     }
 
-    // Validate level
-    if (req.body.level !== undefined && (req.body.level < 1 || req.body.level > 4 || !Number.isInteger(req.body.level))) {
-      businessError.addError("attributes.level", "Level must be an integer between 1 and 4");
-    }
-
     if (businessError.errors.length > 0) throw businessError;
 
     // Add section_id to request body for creation
@@ -119,11 +114,6 @@ const updateQuestion = async (req, res, next) => {
     // Validate score_value if being updated
     if (req.body.score_value !== undefined && (req.body.score_value < 0 || !Number.isInteger(req.body.score_value))) {
       businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
-    }
-
-    // Validate level if being updated
-    if (req.body.level !== undefined && (req.body.level < 1 || req.body.level > 4 || !Number.isInteger(req.body.level))) {
-      businessError.addError("attributes.level", "Level must be an integer between 1 and 4");
     }
 
     if (businessError.errors.length > 0) throw businessError;
@@ -152,6 +142,51 @@ const deleteQuestion = async (req, res, next) => {
   }
 };
 
+// Replace the full set of RSCI items associated with a question.
+// Accepts an array of RSCI ids (empty array clears all associations).
+const updateQuestionRscis = async (req, res, next) => {
+  try {
+    const questionId = req.params.questionId;
+    const question = await Question.findByPk(questionId);
+
+    if (!question) {
+      throw new NotFoundError("Question not found", "Question");
+    }
+
+    const businessError = new BusinessError(400, "Bad Request");
+    const { rsci_ids = [] } = req.body;
+
+    if (!Array.isArray(rsci_ids)) {
+      businessError.addError("data.rsci_ids", "rsci_ids must be an array");
+      throw businessError;
+    }
+
+    const uniqueIds = [...new Set(rsci_ids)];
+
+    if (uniqueIds.length > 0) {
+      const found = await Rsci.findAll({ where: { id: uniqueIds } });
+      if (found.length !== uniqueIds.length) {
+        businessError.addError(
+          "data.rsci_ids",
+          "One or more RSCI ids do not exist"
+        );
+      }
+    }
+
+    if (businessError.errors.length > 0) throw businessError;
+
+    await question.setRscis(uniqueIds);
+
+    const updated = await Question.findByPk(questionId, {
+      include: [{ association: "rscis" }],
+    });
+
+    res.status(200).json(QuestionInlineSerializer.serialize(updated.toJSON()));
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllQuestions,
   getQuestionById,
@@ -159,4 +194,5 @@ module.exports = {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  updateQuestionRscis,
 };

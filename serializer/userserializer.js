@@ -5,6 +5,7 @@ module.exports = new Serializer('users', {
     'name',
     'surname',
     'position',
+    'sub_sector',
     'website_url',
     'organization_name',
     'organisation_phone_number',

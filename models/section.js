@@ -10,8 +10,6 @@ module.exports = (sequelize, DataTypes) => {
       Section.hasMany(models.question, {
         foreignKey: 'section_id',
         as: 'questions',
-        // Default ordering by level descending
-        order: [['level', 'DESC']],
         onDelete: 'CASCADE'
       });
       Section.hasMany(models.result_sections, {
@@ -45,6 +43,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     description: {
       type: DataTypes.TEXT,
+      allowNull: true
+    },
+    core: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    code: {
+      type: DataTypes.STRING,
       allowNull: true
     }
   }, {

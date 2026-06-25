@@ -6,6 +6,47 @@ const config = {
   limit: 10,
 };
 
+/**
+ * Merge a (possibly nested) association path into a Sequelize `include` array.
+ * Supports JSON:API style dot-notation, e.g. "questions.rscis" becomes
+ *   { association: "questions", include: [{ association: "rscis" }] }
+ * Existing entries (string or object) are reused so paths that share a prefix
+ * (e.g. "questions" and "questions.rscis") are merged instead of duplicated.
+ *
+ * @param {Array} includeArr - the Sequelize include array to mutate
+ * @param {string} path - association path, dot-separated for nesting
+ */
+const addIncludePath = (includeArr, path) => {
+  const parts = path.split(".");
+  let level = includeArr;
+
+  parts.forEach((association, index) => {
+    const existingIndex = level.findIndex(
+      (inc) =>
+        (typeof inc === "string" && inc === association) ||
+        (inc && typeof inc === "object" && inc.association === association)
+    );
+
+    let node;
+    if (existingIndex === -1) {
+      node = { association };
+      level.push(node);
+    } else if (typeof level[existingIndex] === "string") {
+      // Normalize a plain-string include into an object so it can hold children.
+      node = { association: level[existingIndex] };
+      level[existingIndex] = node;
+    } else {
+      node = level[existingIndex];
+    }
+
+    // Only descend (and create a child include array) for non-leaf segments.
+    if (index < parts.length - 1) {
+      if (!node.include) node.include = [];
+      level = node.include;
+    }
+  });
+};
+
 
 const processFilters = (filterParams, allowedFields) => {
   const whereConditions = {};
@@ -159,8 +200,8 @@ const createCrudOperations = ({
               )}`
             );
           } else {
-            // Add valid include to the include array
-            include.push({ association: relation });
+            // Add valid include (supports dot-notation nested associations)
+            addIncludePath(include, relation);
             hasIncludes = true;
           }
         });
@@ -220,11 +261,7 @@ const createCrudOperations = ({
           });
         }
       } else {
-
-        if(modelName === "Question" )
-          order.push(["level", "DESC"]);
-        else 
-          order.push(["created_at", "DESC"]);
+        order.push(["created_at", "DESC"]);
       }
 
       // Handle filtering
@@ -317,11 +354,9 @@ const createCrudOperations = ({
               )}`
             );
           } else {
-            // Add valid include to the include array if not already present
-            if (!include.some(inc => inc.association === relation)) {
-              include.push({ association: relation });
-              hasIncludes = true;
-            }
+            // Add valid include (supports dot-notation nested associations)
+            addIncludePath(include, relation);
+            hasIncludes = true;
           }
         });
 

@@ -44,6 +44,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    sub_sector: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     website_url: {
       type: DataTypes.STRING,
       allowNull: true

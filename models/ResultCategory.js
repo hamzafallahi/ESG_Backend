@@ -15,9 +15,6 @@ module.exports = (sequelize, type) => {
     },
     score: {
       type: type.INTEGER
-    },
-    level: {
-      type: type.INTEGER
     }
   }, {
     timestamps: true,
