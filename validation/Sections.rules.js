@@ -3,6 +3,7 @@ const Joi = require("joi");
 const ALLOWED_FIELDS = [
   "id",
   "category_id",
+  "domain_id",
   "title", 
   "title_fr",
   "description",
@@ -11,7 +12,7 @@ const ALLOWED_FIELDS = [
   "updated_at",
 ];
 
-const ALLOWED_SORT_FIELDS = ["title", "title_fr", "description", "core", "category_id", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["title", "title_fr", "description", "core", "category_id", "domain_id", "created_at", "updated_at"];
 
 const sectionDataSchema = {
   type: Joi.string().valid("sections").required(),
@@ -22,6 +23,7 @@ const sectionDataSchema = {
       description: Joi.string().max(1000).allow(null),
       core: Joi.boolean().default(false),
       category_id: Joi.string().uuid().required(),
+      domain_id: Joi.string().uuid().required(),
     })
     .required(),
 };
@@ -33,6 +35,7 @@ const sectionUpdateDataSchema = {
     title_fr: Joi.string().max(255).allow(null),
     description: Joi.string().max(1000).allow(null),
     core: Joi.boolean(),
+    domain_id: Joi.string().uuid(),
   }),
 };
 

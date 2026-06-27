@@ -92,6 +92,7 @@ const create = async (req, res, next) => {
       categoryScores,
       subcategoryScores,
       unansweredCount,
+      scoringSnapshot,
     } = await calculateAllScoresAndLevels(answers, user.sub_sector);
 
     // All questions must be answered before submission
@@ -112,6 +113,7 @@ const create = async (req, res, next) => {
       core_score: coreScore,
       global_feedback: globalFeedback,
       current_rank: null,
+      scoring_snapshot: scoringSnapshot,
     });
 
     // Create justification records for YES answers that include justification data

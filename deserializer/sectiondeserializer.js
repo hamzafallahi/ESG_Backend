@@ -8,7 +8,8 @@ class SectionDeserializer {
     if (attributes.description !== undefined) result.description = attributes.description;
     if (attributes.core !== undefined) result.core = attributes.core;
     if (attributes.category_id !== undefined) result.category_id = attributes.category_id;
-
+    if (attributes.domain_id !== undefined) result.domain_id = attributes.domain_id;  
+    if (attributes.code !== undefined) result.code = attributes.code;                  
     return result;
   }
 }

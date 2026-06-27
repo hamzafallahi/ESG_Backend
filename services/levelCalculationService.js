@@ -2,21 +2,24 @@ const db = require('../models');
 const {
   SECTION_TITLE_TO_CODE,
   pillarForCode,
-  getWeightConfig,
   percentageToLevel,
   applyCoreCap,
 } = require('../config/esgScoring');
+const { getWeightConfig } = require('./weightConfigService');
 
 const Question = db.question;
 const Section = db.section;
 const Category = db.category;
+const Domain = db.domain;
 
 /**
- * Resolve the domain code for a section. Prefers an explicit `code` column,
- * then falls back to a mapping on the English/French title.
+ * Resolve the domain code for a section. Prefers the linked `domain` association,
+ * then the legacy `code` column, then falls back to a mapping on the
+ * English/French title.
  */
 const resolveSectionCode = (section) => {
   return (
+    section.domain?.code ||
     section.code ||
     SECTION_TITLE_TO_CODE[section.title] ||
     SECTION_TITLE_TO_CODE[section.title_fr] ||
@@ -64,10 +67,15 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
         as: 'category',
         attributes: ['id', 'name', 'name_fr'],
       },
+      {
+        model: Domain,
+        as: 'domain',
+        attributes: ['id', 'code', 'pillar'],
+      },
     ],
   });
 
-  const { weights, total } = getWeightConfig(subSector);
+  const { weights, total } = await getWeightConfig(subSector);
 
   let unansweredCount = 0;
 
@@ -217,6 +225,13 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     categoryScores,
     subcategoryScores,
     unansweredCount,
+    // Resolved weight set used for this calculation — persisted on the Result
+    // so historical scores remain reproducible if weights are later edited.
+    scoringSnapshot: {
+      sub_sector: subSector || null,
+      total,
+      weights,
+    },
   };
 };
 

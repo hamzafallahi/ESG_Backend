@@ -5,6 +5,7 @@ const UserInlineSerializer = require('../serializer/User.inline.serializer.js');
 const { createCrudOperations } = require('../utils/crudOperations.js');
 const NotFoundError = require('../error/exception/NotFound.js');
 const BusinessError = require("../error/BusinessError");
+const { isValidSubSector } = require('../utils/subSectorValidation');
 
 const allowedFields = [
   "id",
@@ -80,6 +81,14 @@ const createUser = async (req, res, next) => {
       }
     }
 
+    // Validate sub_sector against active sub-sectors (data-driven)
+    if (req.body.sub_sector) {
+      req.body.sub_sector = String(req.body.sub_sector).toUpperCase();
+      if (!(await isValidSubSector(req.body.sub_sector))) {
+        businessError.addError('attributes.sub_sector', 'Invalid or inactive sub-sector');
+      }
+    }
+
     if (businessError.errors.length > 0) throw businessError;
 
     await crudOps.create(req, res, next);
@@ -107,6 +116,14 @@ const updateUser = async (req, res, next) => {
       
       if (existingUser) {
         businessError.addError('attributes.email', 'Email already exists');
+      }
+    }
+
+    // Validate sub_sector against active sub-sectors when provided (non-empty)
+    if (req.body.sub_sector) {
+      req.body.sub_sector = String(req.body.sub_sector).toUpperCase();
+      if (!(await isValidSubSector(req.body.sub_sector))) {
+        businessError.addError('attributes.sub_sector', 'Invalid or inactive sub-sector');
       }
     }
 
@@ -165,6 +182,14 @@ const updateOwnProfile = async (req, res, next) => {
       
       if (existingUser) {
         businessError.addError('attributes.email', 'Email already exists');
+      }
+    }
+
+    // Validate sub_sector against active sub-sectors when provided (non-empty)
+    if (req.body.sub_sector) {
+      req.body.sub_sector = String(req.body.sub_sector).toUpperCase();
+      if (!(await isValidSubSector(req.body.sub_sector))) {
+        businessError.addError('attributes.sub_sector', 'Invalid or inactive sub-sector');
       }
     }
 

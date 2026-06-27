@@ -62,7 +62,7 @@ const signupSchema = {
       name: Joi.string().max(255).required(),
       surname: Joi.string().max(255).required(),
       position: Joi.string().max(255),
-      sub_sector: Joi.string().valid("TS", "FF", "PL", "CA", "EE", "MP").required(),
+      sub_sector: Joi.string().max(50).required(),
       website_url: Joi.string().max(2048),
       organization_name: Joi.string().max(255).required(),
       organisation_phone_number: Joi.string().max(20),

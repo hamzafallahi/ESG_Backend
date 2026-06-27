@@ -15,6 +15,8 @@ const allowedFields = [
   "title_fr",
   "description",
   "core",
+  "code",
+  "domain_id",
   "created_at",
   "updated_at",
   "deleted_at",

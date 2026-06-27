@@ -8,6 +8,7 @@ const config = require('../config/app-config');
 const NotFoundError = require('../error/exception/NotFound');
 const BusinessError = require('../error/BusinessError');
 const TechnicalError = require('../error/TechnicalError');
+const { isValidSubSector } = require('../utils/subSectorValidation');
 
 // Signup - Register a new user
 exports.signup = async (req, res, next) => {
@@ -21,6 +22,16 @@ exports.signup = async (req, res, next) => {
       const businessError = new BusinessError(409, 'EMAIL_IN_USE', 'Email already in use');
       businessError.addError('attributes.email', 'A user with this email already exists');
       throw businessError;
+    }
+
+    // Validate sub_sector against active sub-sectors (data-driven)
+    if (req.body.sub_sector) {
+      req.body.sub_sector = String(req.body.sub_sector).toUpperCase();
+      if (!(await isValidSubSector(req.body.sub_sector))) {
+        const businessError = new BusinessError(400, 'Bad Request');
+        businessError.addError('attributes.sub_sector', 'Invalid or inactive sub-sector');
+        throw businessError;
+      }
     }
 
     // Create new user

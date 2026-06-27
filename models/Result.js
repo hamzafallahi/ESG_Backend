@@ -31,6 +31,11 @@ module.exports = (sequelize, type) => {
       type: type.JSONB,
       allowNull: true,
       defaultValue: null
+    },
+    scoring_snapshot: {
+      type: type.JSONB,
+      allowNull: true,
+      defaultValue: null
     }
   }, {
     timestamps: true,
