@@ -8,7 +8,6 @@ const SectionInlineSerializer = createInlineSerializer('section', {
     'title_fr', 
     'description',
     'core',
-    'code',
     'created_at', 
     'updated_at', 
     'deleted_at'

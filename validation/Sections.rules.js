@@ -23,7 +23,7 @@ const sectionDataSchema = {
       description: Joi.string().max(1000).allow(null),
       core: Joi.boolean().default(false),
       category_id: Joi.string().uuid().required(),
-      domain_id: Joi.string().uuid().required(),
+      domain_id: Joi.string().uuid().allow(null),
     })
     .required(),
 };

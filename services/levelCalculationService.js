@@ -13,14 +13,12 @@ const Category = db.category;
 const Domain = db.domain;
 
 /**
- * Resolve the domain code for a section. Prefers the linked `domain` association,
- * then the legacy `code` column, then falls back to a mapping on the
- * English/French title.
+ * Resolve the domain code for a section. Prefers the linked `domain`
+ * association, then falls back to a mapping on the English/French title.
  */
 const resolveSectionCode = (section) => {
   return (
     section.domain?.code ||
-    section.code ||
     SECTION_TITLE_TO_CODE[section.title] ||
     SECTION_TITLE_TO_CODE[section.title_fr] ||
     null
@@ -79,8 +77,8 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
 
   let unansweredCount = 0;
 
-  // Per-domain ratio (0-1), keyed by domain code.
-  const domainRatios = {};
+  // Per-domain achieved/denominator totals keyed by domain code.
+  const domainTotals = {};
   const coreCodes = new Set();
 
   const categoryScores = {};      // pillar percentage, keyed EN (+ FR)
@@ -148,7 +146,11 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     const sectionPct = Math.round(sectionRatio * 100);
 
     if (code) {
-      domainRatios[code] = sectionRatio;
+      if (!domainTotals[code]) {
+        domainTotals[code] = { achieved: 0, denominator: 0 };
+      }
+      domainTotals[code].achieved += sectionAchieved;
+      domainTotals[code].denominator += sectionDenominator;
       if (isCore) coreCodes.add(code);
     }
 
@@ -171,7 +173,8 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     let weightSum = 0;
     codes.forEach((code) => {
       const w = weights[code] || 0;
-      const r = domainRatios[code] || 0;
+      const totals = domainTotals[code];
+      const r = totals && totals.denominator > 0 ? totals.achieved / totals.denominator : 0;
       weightedSum += w * r;
       weightSum += w;
     });
@@ -180,7 +183,7 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
 
   // Pillar (category) percentages.
   const pillarCodes = { Environment: [], Social: [], Governance: [] };
-  Object.keys(domainRatios).forEach((code) => {
+  Object.keys(domainTotals).forEach((code) => {
     const pillar = pillarForCode(code);
     if (pillar && pillarCodes[pillar]) pillarCodes[pillar].push(code);
   });
@@ -203,8 +206,10 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
 
   // Global weighted score (SG) over all domains using the sub-sector total.
   let globalWeightedSum = 0;
-  Object.keys(domainRatios).forEach((code) => {
-    globalWeightedSum += (weights[code] || 0) * (domainRatios[code] || 0);
+  Object.keys(domainTotals).forEach((code) => {
+    const totals = domainTotals[code];
+    const domainRatio = totals && totals.denominator > 0 ? totals.achieved / totals.denominator : 0;
+    globalWeightedSum += (weights[code] || 0) * domainRatio;
   });
   const globalScoreExact = total > 0 ? (globalWeightedSum / total) * 100 : 0;
   const globalScore = Math.round(globalScoreExact);
