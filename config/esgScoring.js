@@ -126,11 +126,14 @@ const CORE_MIN_FOR_TOP_LEVEL = 60; // Core aggregate must reach 60% for N4 / N4+
 
 /**
  * Convert a percentage (0-100) to a maturity level code.
+ * The value is clamped to [0, 100] first so floating-point results that land a
+ * hair above 100 (e.g. 100.00000000001) still resolve to the top level instead
+ * of falling through to the S0 fallback.
  * @param {number} pct
  * @returns {'S0'|'N1'|'N2'|'N3'|'N4'|'N4+'}
  */
 const percentageToLevel = (pct) => {
-  const value = Number.isFinite(pct) ? pct : 0;
+  const value = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
   const match = LEVEL_THRESHOLDS.find((t) => value >= t.min && value <= t.max);
   return match ? match.code : 'S0';
 };
