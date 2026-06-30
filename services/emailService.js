@@ -77,7 +77,8 @@ const generateEmailHtml = (organizationName, resultData, resultId) => {
   const envPct = Math.min(Math.round((envScore / 235) * 100), 100);
   const socPct = Math.min(Math.round((socScore / 405) * 100), 100);
   const govPct = Math.min(Math.round((govScore / 315) * 100), 100);
-  const globalPct = Math.min(Math.round((resultData.globalScore / 955) * 100), 100);
+  const maxTotal = resultData.totalScore || 955;
+  const globalPct = Math.min(Math.round((resultData.globalScore / maxTotal) * 100), 100);
 
   const quartileLabel = resultData.globalScore <= 250
     ? "Q1 – Prise de conscience et initiation"
@@ -158,7 +159,7 @@ const generateEmailHtml = (organizationName, resultData, resultId) => {
               <div style="background:#f9fafb;border-radius:12px;padding:24px;text-align:center;border:1px solid #e5e7eb;">
                 <p style="margin:0 0 8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Score Global</p>
                 <p style="margin:0;font-size:52px;font-weight:700;color:#111827;line-height:1;">${resultData.globalScore}</p>
-                <p style="margin:4px 0 16px;font-size:14px;color:#9ca3af;">/ 955</p>
+                <p style="margin:4px 0 16px;font-size:14px;color:#9ca3af;">/ ${resultData.totalScore || 955}</p>
                 <!-- Progress bar -->
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
@@ -519,7 +520,7 @@ const generateResultsPageHtml = (organizationName, resultData) => {
         <canvas id="globalDoughnutChart" width="180" height="180"></canvas>
         <div class="score-donut-overlay">
           <span class="score-number">${resultData.globalScore}</span>
-          <span class="score-max">/ 955</span>
+          <span class="score-max">/ ${resultData.totalScore || 955}</span>
         </div>
       </div>
     </div>
@@ -669,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
     data: {
       labels: ['Score', 'Restant'],
       datasets: [{
-        data: [${resultData.globalScore}, ${955 - resultData.globalScore}],
+        data: [${resultData.globalScore}, ${(resultData.totalScore || 955) - resultData.globalScore}],
         backgroundColor: ['rgba(249,21,21,0.8)', 'rgba(220,220,220,0.3)'],
         borderWidth: 0
       }]

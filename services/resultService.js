@@ -80,6 +80,7 @@ const processResultData = async (userId, resultData, resultId) => {
 const calculateResultData = (result) => {
   const resultData = {
     globalScore: result.total_score || 0,
+    totalScore: result.scoring_snapshot?.total || null,
     categoryScores: {},
     subcategoryScores: {},
     categoryLevels: {}

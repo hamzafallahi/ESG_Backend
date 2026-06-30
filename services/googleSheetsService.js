@@ -43,7 +43,7 @@ const appendResultToSheet = async (organizationName, phoneNumber, email, resultD
 
     const range = "Sheet1!A1:I1";
     const assessmentDate = new Date().toLocaleDateString('fr-FR');
-    const globalScore = `${resultData.globalScore} / 955`;
+    const globalScore = `${resultData.globalScore} / ${resultData.totalScore || 955}`;
     
     // Encode the resultData to create the link
     const encodedData = encodeURIComponent(JSON.stringify(resultData));

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/app-config');
 const db = require('../models');
+const { getWeightConfig } = require('../services/weightConfigService');
 
 /**
  * Helper: extract token from cookie (supports req.cookies or raw Cookie header)
@@ -41,6 +42,15 @@ const authenticate = async (req, res, next) => {
     // Add user info to request
     req.userId = decoded.id;
     req.userRole = decoded.role; // 'user', 'admin', or 'super_admin'
+
+    // Fetch total score based on user's sub-sector
+    if (decoded.role === 'user') {
+      const user = await db.user.findByPk(decoded.id, { attributes: ['sub_sector'] });
+      if (user && user.sub_sector) {
+        const weightConfig = await getWeightConfig(user.sub_sector);
+        req.totalscore = weightConfig.total;
+      }
+    }
     
     next();
   } catch (error) {
@@ -118,6 +128,15 @@ const optionalAuthenticate = async (req, res, next) => {
     req.userId = decoded.id;
     req.userRole = decoded.role;
 
+    // Fetch total score based on user's sub-sector
+    if (decoded.role === 'user') {
+      const user = await db.user.findByPk(decoded.id, { attributes: ['sub_sector'] });
+      if (user && user.sub_sector) {
+        const weightConfig = await getWeightConfig(user.sub_sector);
+        req.totalscore = weightConfig.total;
+      }
+    }
+
     return next();
   } catch (error) {
     return next();
@@ -152,7 +171,16 @@ const authenticateSSE = async (req, res, next) => {
     // Add user info to request
     req.userId = decoded.id;
     req.userRole = decoded.role; // 'user', 'admin', or 'super_admin'
-    
+
+    // Fetch total score based on user's sub-sector
+    if (decoded.role === 'user') {
+      const user = await db.user.findByPk(decoded.id, { attributes: ['sub_sector'] });
+      if (user && user.sub_sector) {
+        const weightConfig = await getWeightConfig(user.sub_sector);
+        req.totalscore = weightConfig.total;
+      }
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({ 
