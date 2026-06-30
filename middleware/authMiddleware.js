@@ -7,13 +7,20 @@ const { getWeightConfig } = require('../services/weightConfigService');
  * Helper: extract token from cookie (supports req.cookies or raw Cookie header)
  */
 const getTokenFromCookie = (req) => {
-  if (req.cookies && req.cookies.token) return req.cookies.token;
+  // 1. Check parsed cookies if cookie-parser is used
+  if (req.cookies) {
+    if (req.cookies.admin_token) return req.cookies.admin_token;
+    if (req.cookies.user_token) return req.cookies.user_token;
+  }
+// 2. Fallback for raw header parsing
   const cookieHeader = req.headers.cookie;
   if (!cookieHeader) return null;
-  const parts = cookieHeader.split(';').map(c => c.trim());
+const parts = cookieHeader.split(';').map(c => c.trim());
   for (const p of parts) {
     const [k, ...v] = p.split('=');
-    if (k === 'token') return decodeURIComponent(v.join('='));
+    if (k === 'admin_token' || k === 'user_token') {
+      return decodeURIComponent(v.join('='));
+    }
   }
   return null;
 };

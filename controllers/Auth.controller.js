@@ -52,7 +52,7 @@ exports.signup = async (req, res, next) => {
       sameSite: 'lax',
       expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
     };
-    res.cookie('token', token, cookieOptions);
+    res.cookie('user_token', token, cookieOptions);
 
     const serializedUser = AuthSerializer.serialize(user.toJSON());
     return res.status(201).json(serializedUser);
@@ -98,7 +98,7 @@ exports.login = async (req, res, next) => {
       sameSite: 'lax',
       expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
     };
-    res.cookie('token', token, cookieOptions);
+    res.cookie('user_token', token, cookieOptions);
 
     const serializedUser = AuthSerializer.serialize(user.toJSON());
     return res.status(200).json(serializedUser);
@@ -175,7 +175,7 @@ exports.adminLogin = async (req, res, next) => {
       sameSite: 'lax',
       expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
     };
-    res.cookie('token', token, cookieOptions);
+    res.cookie('admin_token', token, cookieOptions);
 
     const userData = user.toJSON();
     return res.status(200).json({
