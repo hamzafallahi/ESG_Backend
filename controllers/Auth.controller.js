@@ -110,6 +110,12 @@ exports.login = async (req, res, next) => {
 // Get current user info
 exports.getCurrentUser = async (req, res, next) => {
   try {
+    if (req.userRole !== 'user') {
+      const businessError = new BusinessError(401, 'INVALID_TOKEN', 'Invalid token for user endpoint');
+      businessError.addError('token', 'User token is required');
+      throw businessError;
+    }
+
     const user = await User.findByPk(req.userId);
     
     if (!user) {
@@ -200,6 +206,12 @@ exports.adminLogin = async (req, res, next) => {
 // Get current admin info
 exports.getCurrentAdmin = async (req, res, next) => {
   try {
+    if (req.userRole !== 'admin' && req.userRole !== 'super_admin') {
+      const businessError = new BusinessError(401, 'INVALID_TOKEN', 'Invalid token for admin endpoint');
+      businessError.addError('token', 'Admin token is required');
+      throw businessError;
+    }
+
     let user;
     let role;
     

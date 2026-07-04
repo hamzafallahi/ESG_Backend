@@ -34,6 +34,16 @@ const errorHandler = (err, req, res, next) => {
     return sendErrorResponse(err.statusCode || 500, errors);
   }
 
+  if (err instanceof NotFoundError) {
+    const errors = [formatError({
+      status: (err.statusCode || 404).toString(),
+      title: 'Not Found',
+      detail: err.message,
+      code: 'NOT_FOUND'
+    })];
+    return sendErrorResponse(err.statusCode || 404, errors);
+  }
+
   if (err instanceof TechnicalError) {
     const errors = [formatError({
       status: err.status,

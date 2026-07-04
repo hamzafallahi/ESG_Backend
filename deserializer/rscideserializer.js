@@ -5,6 +5,7 @@ class RsciDeserializer {
 
     if (attributes.code !== undefined) result.code = attributes.code;
     if (attributes.title !== undefined) result.title = attributes.title;
+    if (attributes.title_fr !== undefined) result.title_fr = attributes.title_fr;
 
     return result;
   }

@@ -53,12 +53,21 @@ const getCurrentUserProgress = async (req, res, next) => {
   try {
     const userId = req.userId; // From auth middleware
 
-    const progress = await AssessmentProgress.findOne({
+    let progress = await AssessmentProgress.findOne({
       where: { user_id: userId },
     });
 
     if (!progress) {
-      throw new NotFoundError('Assessment progress not found', 'AssessmentProgress');
+      progress = await AssessmentProgress.create({
+        user_id: userId,
+        answers: {},
+        current_page: 0,
+        ui_state: {},
+        total_questions: 0,
+        answered_questions: 0,
+        completion_percentage: 0.00,
+        started_at: null,
+      });
     }
 
     const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());

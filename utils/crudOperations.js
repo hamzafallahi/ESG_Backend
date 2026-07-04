@@ -148,6 +148,7 @@ const createCrudOperations = ({
   defaultIncludes = [],
   uniqueField = null,
   parentIdField = null,
+  defaultOrder = [["created_at", "DESC"]],
 }) => ({
   getAllWithPagination: async (req, res, next) => {
     try {
@@ -261,7 +262,7 @@ const createCrudOperations = ({
           });
         }
       } else {
-        order.push(["created_at", "DESC"]);
+        order = [...defaultOrder];
       }
 
       // Handle filtering

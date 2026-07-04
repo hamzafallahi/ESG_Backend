@@ -1,8 +1,8 @@
 const Joi = require("joi");
 
-const ALLOWED_FIELDS = ["id", "code", "title", "created_at", "updated_at"];
+const ALLOWED_FIELDS = ["id", "code", "title", "title_fr", "created_at", "updated_at"];
 
-const ALLOWED_SORT_FIELDS = ["code", "title", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["code", "title", "title_fr", "created_at", "updated_at"];
 
 const rsciDataSchema = {
   type: Joi.string().valid("rscis").required(),
@@ -10,6 +10,7 @@ const rsciDataSchema = {
     .keys({
       code: Joi.string().max(50).required(),
       title: Joi.string().max(255).required(),
+      title_fr: Joi.string().allow('', null).max(255),
     })
     .required(),
 };
@@ -19,6 +20,7 @@ const rsciUpdateDataSchema = {
   attributes: Joi.object().keys({
     code: Joi.string().max(50),
     title: Joi.string().max(255),
+    title_fr: Joi.string().allow('', null).max(255),
   }),
 };
 

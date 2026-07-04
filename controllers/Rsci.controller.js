@@ -6,7 +6,7 @@ const { createCrudOperations } = require('../utils/crudOperations.js');
 const NotFoundError = require('../error/exception/NotFound.js');
 const BusinessError = require('../error/BusinessError');
 
-const allowedFields = ["id", "code", "title", "created_at", "updated_at"];
+const allowedFields = ["id", "code", "title", "title_fr", "created_at", "updated_at"];
 
 const crudOps = createCrudOperations({
   Model: Rsci,

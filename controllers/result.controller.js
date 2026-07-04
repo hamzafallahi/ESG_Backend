@@ -2,6 +2,7 @@ const db = require('../models');
 const Result = db.results;
 const ResultCategory = db.result_categories;
 const ResultSection = db.result_sections;
+const AssessmentProgress = db.assessment_progress;
 const Justification = db.justification;
 const Category = db.category;
 const Section = db.section;
@@ -80,7 +81,18 @@ const create = async (req, res, next) => {
     }
 
     // answers format: { questionId: { type: 'YES'|'NN'|'NA'|'NAC', nac_percentage?: number, justification?: {...} } }
-    const answers = req.body.answers || {};
+    let answers = req.body.answers || {};
+
+    if (Object.keys(answers).length === 0) {
+      const progress = await AssessmentProgress.findOne({
+        where: { user_id: userId },
+        attributes: ['answers'],
+      });
+
+      if (progress?.answers && typeof progress.answers === 'object') {
+        answers = progress.answers;
+      }
+    }
     const globalFeedback = req.body.global_feedback || null;
 
     // Calculate all scores (percentages) and the global maturity level

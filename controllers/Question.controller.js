@@ -14,6 +14,7 @@ const allowedFields = [
   "text",
   "text_fr",
   "score_value",
+  "level",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -27,6 +28,7 @@ const crudOps = createCrudOperations({
   allowedIncludes: ["section", "justifications", "rscis"],
   allowedFields,
   defaultIncludes: ["section", "justifications", "rscis"],
+  defaultOrder: [["level", "ASC"], ["created_at", "ASC"]],
 });
 
 // CRUD operations for questions by section (with parent relationship)
@@ -39,6 +41,7 @@ const crudOpsBySection = createCrudOperations({
   allowedFields,
   defaultIncludes: ["section", "justifications", "rscis"],
   parentIdField: "section_id",
+  defaultOrder: [["level", "ASC"], ["created_at", "ASC"]],
 });
 
 // Custom getAll with pagination
@@ -90,6 +93,10 @@ const createQuestion = async (req, res, next) => {
       businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
     }
 
+    if (req.body.level !== undefined && (req.body.level < 1 || req.body.level > 4 || !Number.isInteger(req.body.level))) {
+      businessError.addError("attributes.level", "Level must be an integer between 1 and 4");
+    }
+
     if (businessError.errors.length > 0) throw businessError;
 
     // Add section_id to request body for creation
@@ -114,6 +121,10 @@ const updateQuestion = async (req, res, next) => {
     // Validate score_value if being updated
     if (req.body.score_value !== undefined && (req.body.score_value < 0 || !Number.isInteger(req.body.score_value))) {
       businessError.addError("attributes.score_value", "Score value must be a non-negative integer");
+    }
+
+    if (req.body.level !== undefined && (req.body.level < 1 || req.body.level > 4 || !Number.isInteger(req.body.level))) {
+      businessError.addError("attributes.level", "Level must be an integer between 1 and 4");
     }
 
     if (businessError.errors.length > 0) throw businessError;

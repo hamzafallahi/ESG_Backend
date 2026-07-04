@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
     title: {
       type: DataTypes.STRING(255),
       allowNull: false
+    },
+    title_fr: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   }, {
     sequelize,

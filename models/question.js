@@ -50,6 +50,16 @@ module.exports = (sequelize, DataTypes) => {
     score_value: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    level: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      validate: {
+        min: 1,
+        max: 4,
+        isInt: true
+      }
     }
   }, {
     sequelize,

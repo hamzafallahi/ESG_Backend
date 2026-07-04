@@ -18,6 +18,10 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: false
       },
+      title_fr: {
+        type: Sequelize.STRING(255),
+        allowNull: true
+      },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE,

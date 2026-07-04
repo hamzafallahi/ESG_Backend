@@ -6,6 +6,7 @@ const QuestionInlineSerializer = createInlineSerializer('question', {
     'text',
     'text_fr', 
     'score_value',
+    'level',
     'created_at', 
     'updated_at', 
     'deleted_at'
@@ -21,7 +22,7 @@ const QuestionInlineSerializer = createInlineSerializer('question', {
     },
     rscis: {
       type: 'rsci',
-      attributes: ['code', 'title', 'created_at', 'updated_at']
+      attributes: ['code', 'title', 'title_fr', 'created_at', 'updated_at']
     }
   }
 });

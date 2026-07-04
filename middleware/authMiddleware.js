@@ -6,23 +6,29 @@ const { getWeightConfig } = require('../services/weightConfigService');
 /**
  * Helper: extract token from cookie (supports req.cookies or raw Cookie header)
  */
-const getTokenFromCookie = (req) => {
+const getTokenFromCookie = (req, preferred = 'any') => {
+  const pickToken = (tokens) => {
+    if (preferred === 'user') return tokens.user_token || tokens.admin_token || null;
+    if (preferred === 'admin') return tokens.admin_token || tokens.user_token || null;
+    return tokens.admin_token || tokens.user_token || null;
+  };
+
   // 1. Check parsed cookies if cookie-parser is used
   if (req.cookies) {
-    if (req.cookies.admin_token) return req.cookies.admin_token;
-    if (req.cookies.user_token) return req.cookies.user_token;
+    return pickToken(req.cookies);
   }
 // 2. Fallback for raw header parsing
   const cookieHeader = req.headers.cookie;
   if (!cookieHeader) return null;
+  const parsed = {};
 const parts = cookieHeader.split(';').map(c => c.trim());
   for (const p of parts) {
     const [k, ...v] = p.split('=');
     if (k === 'admin_token' || k === 'user_token') {
-      return decodeURIComponent(v.join('='));
+      parsed[k] = decodeURIComponent(v.join('='));
     }
   }
-  return null;
+  return pickToken(parsed);
 };
 
 /**
@@ -31,7 +37,24 @@ const parts = cookieHeader.split(';').map(c => c.trim());
  */
 const authenticate = async (req, res, next) => {
   try {
-    const token = getTokenFromCookie(req);
+    const url = req.originalUrl || '';
+    const normalizedUrl = url.toLowerCase();
+    const isAssessmentProgressMeRoute = normalizedUrl.includes('/assessment-progress/me');
+    const isUserPreferredRoute =
+      (normalizedUrl.includes('/auth/me') && !normalizedUrl.includes('/auth/admin')) ||
+      normalizedUrl.includes('/profile') ||
+      isAssessmentProgressMeRoute;
+
+    const isAdminPreferredRoute =
+      normalizedUrl.includes('/auth/admin') ||
+      normalizedUrl.includes('/admins') ||
+      normalizedUrl.includes('/super-admins') ||
+      (normalizedUrl.includes('/assessment-progress') && !isAssessmentProgressMeRoute);
+
+    const token = getTokenFromCookie(
+      req,
+      isUserPreferredRoute ? 'user' : isAdminPreferredRoute ? 'admin' : 'any'
+    );
 
     if (!token) {
       return res.status(401).json({ 

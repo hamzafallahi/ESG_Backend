@@ -12,6 +12,34 @@ const Section = db.section;
 const Category = db.category;
 const Domain = db.domain;
 
+const normalizeQuestionId = (id) => String(id || '').trim().replace(/[{}]/g, '').toLowerCase();
+
+const normalizeAnswerValue = (value) => {
+  if (typeof value === 'string') {
+    return { type: value.toUpperCase() };
+  }
+
+  if (value && typeof value === 'object') {
+    const normalized = { ...value };
+    if (typeof normalized.type === 'string') {
+      normalized.type = normalized.type.toUpperCase();
+    }
+    return normalized;
+  }
+
+  return value;
+};
+
+const buildNormalizedAnswersMap = (answers) => {
+  const map = new Map();
+  Object.entries(answers || {}).forEach(([questionId, value]) => {
+    const normalizedId = normalizeQuestionId(questionId);
+    if (!normalizedId) return;
+    map.set(normalizedId, normalizeAnswerValue(value));
+  });
+  return map;
+};
+
 /**
  * Resolve the domain code for a section. Prefers the linked `domain`
  * association, then falls back to a mapping on the English/French title.
@@ -74,6 +102,7 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
   });
 
   const { weights, total } = await getWeightConfig(subSector);
+  const normalizedAnswers = buildNormalizedAnswersMap(answers);
 
   let unansweredCount = 0;
 
@@ -104,7 +133,7 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     let sectionDenominator = 0;
 
     for (const q of questions) {
-      const answer = answers[q.id];
+      const answer = normalizedAnswers.get(normalizeQuestionId(q.id));
 
       if (!answer || !answer.type) {
         unansweredCount++;
