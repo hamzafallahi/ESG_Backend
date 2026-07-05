@@ -6,7 +6,6 @@ const ALLOWED_FIELDS = [
   "total_score",
   "global_feedback",
   "current_rank",
-  "assessment_details",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -63,17 +62,6 @@ const resultUpdateDataSchema = {
       total_score: Joi.number().integer().allow(null),
       global_feedback: Joi.string().allow(null),
       current_rank: Joi.number().integer().allow(null),
-      assessment_details: Joi.object().keys({
-        user_id: Joi.string().uuid(),
-        answers: Joi.object(),
-        current_page: Joi.number().integer().min(0),
-        ui_state: Joi.object(),
-        total_questions: Joi.number().integer().min(0),
-        answered_questions: Joi.number().integer().min(0),
-        completion_percentage: Joi.number().min(0).max(100),
-        started_at: Joi.date().iso().allow(null),
-        saved_at: Joi.date().iso()
-      }).allow(null)
     }),
 };
 

@@ -27,11 +27,6 @@ module.exports = (sequelize, type) => {
     current_rank: {
       type: type.INTEGER
     },
-    assessment_details: {
-      type: type.JSONB,
-      allowNull: true,
-      defaultValue: null
-    },
     scoring_snapshot: {
       type: type.JSONB,
       allowNull: true,
@@ -71,22 +66,6 @@ module.exports = (sequelize, type) => {
         });
         
         if (progress) {
-          // Keep a lightweight metrics snapshot on the result for admin
-          // dashboards (answers now live in assessment_progress_answers).
-          const assessmentDetails = {
-            user_id: progress.user_id,
-            assessment_progress_id: progress.id,
-            current_page: progress.current_page,
-            ui_state: progress.ui_state,
-            total_questions: progress.total_questions,
-            answered_questions: progress.answered_questions,
-            completion_percentage: parseFloat(progress.completion_percentage),
-            started_at: progress.started_at,
-            saved_at: new Date().toISOString()
-          };
-          
-          await result.update({ assessment_details: assessmentDetails });
-          
           // Finalize the progress: submitted + linked to the result.
           // A fresh DRAFT will be created lazily the next time the user
           // opens the assessment.

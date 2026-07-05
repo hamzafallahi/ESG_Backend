@@ -8,7 +8,6 @@ const ResultInlineSerializer = createInlineSerializer('result', {
     'core_score',
     'global_feedback', 
     'current_rank', 
-    'assessment_details',
     'created_at', 
     'updated_at', 
     'deleted_at'

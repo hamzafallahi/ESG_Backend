@@ -25,7 +25,6 @@ const allowedFields = [
   "total_score",
   "global_feedback",
   "current_rank",
-  "assessment_details",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -260,21 +259,36 @@ const getAssessmentDetails = async (req, res, next) => {
     const { id } = req.params;
     
     const result = await Result.findByPk(id, {
-      attributes: ['id', 'user_id', 'assessment_details', 'created_at']
+      attributes: ['id', 'user_id', 'created_at'],
+      include: [
+        {
+          model: AssessmentProgress,
+          as: 'assessment_progress',
+          required: false,
+          attributes: [
+            'id',
+            'user_id',
+            'current_page',
+            'ui_state',
+            'total_questions',
+            'answered_questions',
+            'completion_percentage',
+            'started_at',
+            'updated_at'
+          ]
+        }
+      ]
     });
 
     if (!result) {
       throw new NotFoundError("Result not found", "Result");
     }
 
-    const assessmentDetails = result.assessment_details || {};
+    const progress = result.assessment_progress || null;
 
     // Answers come from the normalized rows of the submitted progress linked
-    // to this result; legacy results fall back to the JSONB snapshot.
-    let answers = assessmentDetails.answers || {};
-    const progress = await AssessmentProgress.findOne({
-      where: { result_id: id },
-    });
+    // to this result.
+    let answers = {};
 
     if (progress) {
       answers = await composeAnswers(progress.id);
@@ -288,15 +302,15 @@ const getAssessmentDetails = async (req, res, next) => {
           result_id: result.id,
           user_id: result.user_id,
           answers,
-          current_page: progress ? progress.current_page : (assessmentDetails.current_page || 0),
-          ui_state: progress ? progress.ui_state : (assessmentDetails.ui_state || {}),
-          total_questions: progress ? progress.total_questions : (assessmentDetails.total_questions || 0),
-          answered_questions: progress ? progress.answered_questions : (assessmentDetails.answered_questions || 0),
+          current_page: progress ? progress.current_page : 0,
+          ui_state: progress ? progress.ui_state : {},
+          total_questions: progress ? progress.total_questions : 0,
+          answered_questions: progress ? progress.answered_questions : 0,
           completion_percentage: progress
             ? parseFloat(progress.completion_percentage)
-            : (assessmentDetails.completion_percentage || 0),
-          started_at: progress ? progress.started_at : (assessmentDetails.started_at || null),
-          saved_at: assessmentDetails.saved_at || (progress ? progress.updated_at : null),
+            : 0,
+          started_at: progress ? progress.started_at : null,
+          saved_at: progress ? progress.updated_at : null,
           result_created_at: result.created_at
         }
       }

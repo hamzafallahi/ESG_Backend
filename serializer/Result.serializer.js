@@ -8,7 +8,6 @@ const ResultSerializer = new Serializer('results', {
     'core_score',
     'global_feedback', 
     'current_rank', 
-    'assessment_details',
     'scoring_snapshot',
     'created_at', 
     'updated_at', 
