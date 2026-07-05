@@ -10,18 +10,19 @@ module.exports = (sequelize, DataTypes) => {
         as: 'user',
         onDelete: 'CASCADE'
       });
-    }
 
-    // Method to update progress metrics
-    updateProgress() {
-      if (this.answers && typeof this.answers === 'object') {
-        this.answered_questions = Object.keys(this.answers).length;
-        if (this.total_questions > 0) {
-          this.completion_percentage = (
-            (this.answered_questions / this.total_questions) * 100
-          ).toFixed(2);
-        }
-      }
+      // Normalized answers (one row per answered question)
+      AssessmentProgress.hasMany(models.assessment_progress_answer, {
+        foreignKey: 'assessment_progress_id',
+        as: 'progress_answers',
+        onDelete: 'CASCADE'
+      });
+
+      // Result this progress was submitted as (null while DRAFT)
+      AssessmentProgress.belongsTo(models.results, {
+        foreignKey: 'result_id',
+        as: 'result'
+      });
     }
 
     // Remove sensitive data from JSON output if needed
@@ -41,24 +42,26 @@ module.exports = (sequelize, DataTypes) => {
     user_id: {
       type: DataTypes.UUID,
       allowNull: false,
-      unique: true,
       references: {
         model: 'users',
         key: 'id'
       },
       onDelete: 'CASCADE'
     },
-    answers: {
-      type: DataTypes.JSONB,
+    status: {
+      type: DataTypes.ENUM('DRAFT', 'SUBMITTED'),
       allowNull: false,
-      defaultValue: {},
-      validate: {
-        isValidJSON(value) {
-          if (typeof value !== 'object') {
-            throw new Error('Answers must be a valid JSON object');
-          }
-        }
-      }
+      defaultValue: 'DRAFT'
+    },
+    result_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      defaultValue: null,
+      references: {
+        model: 'results',
+        key: 'id'
+      },
+      onDelete: 'SET NULL'
     },
     current_page: {
       type: DataTypes.INTEGER,
@@ -126,13 +129,7 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'assessment_progress',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    underscored: true,
-    hooks: {
-      // Automatically update progress metrics before save
-      beforeSave: async (assessmentProgress) => {
-        assessmentProgress.updateProgress();
-      }
-    }
+    underscored: true
   });
   
   return AssessmentProgress;

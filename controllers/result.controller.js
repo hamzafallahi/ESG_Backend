@@ -3,7 +3,6 @@ const Result = db.results;
 const ResultCategory = db.result_categories;
 const ResultSection = db.result_sections;
 const AssessmentProgress = db.assessment_progress;
-const Justification = db.justification;
 const Category = db.category;
 const Section = db.section;
 const User = db.user;
@@ -14,6 +13,11 @@ const NotFoundError = require( "../error/exception/NotFound.js");
 const BusinessError = require("../error/BusinessError");
 const resultService = require('../services/resultService');
 const { calculateAllScoresAndLevels } = require('../services/levelCalculationService');
+const {
+  composeAnswers,
+  syncAnswers,
+  computeMetrics,
+} = require('../helper/progressAnswersHelper.js');
 
 const allowedFields = [
   "id",
@@ -83,15 +87,15 @@ const create = async (req, res, next) => {
     // answers format: { questionId: { type: 'YES'|'NN'|'NA'|'NAC', nac_percentage?: number, justification?: {...} } }
     let answers = req.body.answers || {};
 
-    if (Object.keys(answers).length === 0) {
-      const progress = await AssessmentProgress.findOne({
-        where: { user_id: userId },
-        attributes: ['answers'],
-      });
+    // The user's current DRAFT progress (created lazily if missing) — it is
+    // the canonical source of in-progress answers and will be linked to the
+    // result on submission (status -> SUBMITTED, result_id set by the hook).
+    let progress = await AssessmentProgress.findOne({
+      where: { user_id: userId, status: 'DRAFT' },
+    });
 
-      if (progress?.answers && typeof progress.answers === 'object') {
-        answers = progress.answers;
-      }
+    if (Object.keys(answers).length === 0 && progress) {
+      answers = await composeAnswers(progress.id);
     }
     const globalFeedback = req.body.global_feedback || null;
 
@@ -117,7 +121,25 @@ const create = async (req, res, next) => {
       throw businessError;
     }
 
-    // Create the main result record
+    // Make sure the DRAFT progress reflects exactly the submitted answers so
+    // the normalized rows linked to this result are accurate.
+    if (!progress) {
+      progress = await AssessmentProgress.create({
+        user_id: userId,
+        status: 'DRAFT',
+      });
+    }
+
+    const answeredCount = await syncAnswers(progress, answers);
+    const totalQuestions = progress.total_questions > 0 ? progress.total_questions : answeredCount;
+    await progress.update({
+      total_questions: totalQuestions,
+      ...computeMetrics(answeredCount, totalQuestions),
+      started_at: progress.started_at || new Date(),
+    });
+
+    // Create the main result record (afterCreate hook marks the progress
+    // SUBMITTED and sets its result_id)
     const newResult = await Result.create({
       user_id: userId,
       total_score: globalScore,
@@ -127,37 +149,6 @@ const create = async (req, res, next) => {
       current_rank: null,
       scoring_snapshot: scoringSnapshot,
     });
-
-    // Create justification records for YES answers that include justification data
-    const justificationPromises = Object.entries(answers)
-      .filter(([, ans]) => {
-        const j = ans.justification;
-        // Only create justification if all required fields are present
-        return (
-          ans.type === 'YES' &&
-          j &&
-          j.proof_type &&
-          j.description && j.description.length >= 50 &&
-          j.document_date
-        );
-      })
-      .map(([questionId, ans]) => {
-        const j = ans.justification;
-        return Justification.create({
-          question_id: questionId,
-          proof_type: j.proof_type,
-          description: j.description,
-          document_date: j.document_date,
-          reference_number: j.reference_number || null,
-          evaluator_comment: j.evaluator_comment || null,
-          attachments: j.attachment_urls || [],
-        }).catch((err) => {
-          console.error(`[Result] Failed to create justification for question ${questionId}:`, err.message);
-          return null;
-        });
-      });
-
-    await Promise.all(justificationPromises);
 
     // Fetch category and section mappings for creating sub-records
     const [allCategories, allSections] = await Promise.all([
@@ -276,9 +267,19 @@ const getAssessmentDetails = async (req, res, next) => {
       throw new NotFoundError("Result not found", "Result");
     }
 
-    // Serialize similar to AssessmentProgress serializer format
     const assessmentDetails = result.assessment_details || {};
-    
+
+    // Answers come from the normalized rows of the submitted progress linked
+    // to this result; legacy results fall back to the JSONB snapshot.
+    let answers = assessmentDetails.answers || {};
+    const progress = await AssessmentProgress.findOne({
+      where: { result_id: id },
+    });
+
+    if (progress) {
+      answers = await composeAnswers(progress.id);
+    }
+
     const serializedData = {
       data: {
         type: 'assessment_details',
@@ -286,13 +287,16 @@ const getAssessmentDetails = async (req, res, next) => {
         attributes: {
           result_id: result.id,
           user_id: result.user_id,
-          answers: assessmentDetails.answers || {},
-          current_page: assessmentDetails.current_page || 0,
-          ui_state: assessmentDetails.ui_state || {},
-          total_questions: assessmentDetails.total_questions || 0,
-          answered_questions: assessmentDetails.answered_questions || 0,
-          completion_percentage: assessmentDetails.completion_percentage || 0,
-          saved_at: assessmentDetails.saved_at || null,
+          answers,
+          current_page: progress ? progress.current_page : (assessmentDetails.current_page || 0),
+          ui_state: progress ? progress.ui_state : (assessmentDetails.ui_state || {}),
+          total_questions: progress ? progress.total_questions : (assessmentDetails.total_questions || 0),
+          answered_questions: progress ? progress.answered_questions : (assessmentDetails.answered_questions || 0),
+          completion_percentage: progress
+            ? parseFloat(progress.completion_percentage)
+            : (assessmentDetails.completion_percentage || 0),
+          started_at: progress ? progress.started_at : (assessmentDetails.started_at || null),
+          saved_at: assessmentDetails.saved_at || (progress ? progress.updated_at : null),
           result_created_at: result.created_at
         }
       }

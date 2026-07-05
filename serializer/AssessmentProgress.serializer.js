@@ -3,6 +3,8 @@ const { Serializer } = require('jsonapi-serializer');
 const AssessmentProgressSerializer = new Serializer('assessment_progress', {
   attributes: [
     'user_id',
+    'status',
+    'result_id',
     'answers',
     'current_page',
     'ui_state',

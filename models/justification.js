@@ -27,6 +27,11 @@ module.exports = (sequelize, DataTypes) => {
         as: 'question',
         onDelete: 'CASCADE'
       });
+
+      Justification.hasMany(models.assessment_progress_answer, {
+        foreignKey: 'justification_id',
+        as: 'progress_answers'
+      });
     }
   }
 

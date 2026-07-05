@@ -3,6 +3,8 @@ const Joi = require("joi");
 const ALLOWED_FIELDS = [
   "id",
   "user_id",
+  "status",
+  "result_id",
   "answers",
   "current_page",
   "ui_state",
@@ -16,6 +18,7 @@ const ALLOWED_FIELDS = [
 
 const ALLOWED_SORT_FIELDS = [
   "user_id",
+  "status",
   "current_page",
   "total_questions",
   "answered_questions",
@@ -25,12 +28,21 @@ const ALLOWED_SORT_FIELDS = [
   "updated_at"
 ];
 
+const answersSchema = Joi.object().pattern(
+  Joi.string().uuid(),
+  Joi.object().keys({
+    type: Joi.string().valid('YES', 'NN', 'NA', 'NAC').required(),
+    nac_percentage: Joi.number().min(0).max(100).allow(null),
+    justification: Joi.object().allow(null),
+  }).unknown(true)
+);
+
 const assessmentProgressDataSchema = {
   type: Joi.string().valid("assessment_progress").required(),
   attributes: Joi.object()
     .keys({
       user_id: Joi.string().uuid().required(),
-      answers: Joi.object().default({}),
+      answers: answersSchema.default({}),
       current_page: Joi.number().integer().min(0).default(0),
       ui_state: Joi.object().default({}),
       total_questions: Joi.number().integer().min(0).default(0),
@@ -46,7 +58,7 @@ const assessmentProgressUpdateDataSchema = {
   attributes: Joi.object()
     .keys({
       user_id: Joi.string().uuid(),
-      answers: Joi.object(),
+      answers: answersSchema,
       current_page: Joi.number().integer().min(0),
       ui_state: Joi.object(),
       total_questions: Joi.number().integer().min(0),

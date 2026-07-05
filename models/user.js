@@ -5,10 +5,18 @@ const bcrypt = require('bcryptjs');
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      // Define associations here if needed
+      // Current draft progress (a user has at most one DRAFT at a time)
       User.hasOne(models.assessment_progress, {
         foreignKey: 'user_id',
         as: 'assessment_progress',
+        scope: { status: 'DRAFT' },
+        onDelete: 'CASCADE'
+      });
+
+      // Full progress history (drafts + submitted attempts)
+      User.hasMany(models.assessment_progress, {
+        foreignKey: 'user_id',
+        as: 'assessment_progress_history',
         onDelete: 'CASCADE'
       });
     }
@@ -191,7 +199,7 @@ module.exports = (sequelize, DataTypes) => {
         if (AssessmentProgress) {
           await AssessmentProgress.create({
             user_id: user.id,
-            answers: {},
+            status: 'DRAFT',
             current_page: 0,
             ui_state: {},
             total_questions: 0,

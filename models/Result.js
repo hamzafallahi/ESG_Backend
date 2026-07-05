@@ -50,9 +50,13 @@ module.exports = (sequelize, type) => {
     //Result.belongsTo(models.User, { foreignKey: 'user_id' });
     Result.hasMany(models.result_categories, { foreignKey: 'result_id' ,    as: 'result_categories', onDelete: 'CASCADE'});
     Result.hasMany(models.result_sections, { foreignKey: 'result_id' ,    as: 'result_sections', onDelete: 'CASCADE' });
+    // The submitted assessment progress (with its normalized answers) that produced this result
+    Result.hasOne(models.assessment_progress, { foreignKey: 'result_id', as: 'assessment_progress' });
   };
 
-  // Hook to reset AssessmentProgress after Result is created
+  // Hook to finalize AssessmentProgress after Result is created:
+  // the DRAFT progress is marked SUBMITTED and linked to this result.
+  // Its normalized answers stay attached to the progress row (history).
   Result.afterCreate(async (result, options) => {
     const AssessmentProgress = sequelize.models.assessment_progress;
     const User = sequelize.models.user;
@@ -60,17 +64,18 @@ module.exports = (sequelize, type) => {
     const InboxMessage = sequelize.models.inbox_message;
     
     if (result.user_id) {
-      // Save assessment progress to result before resetting
+      // Link the draft progress to this result and mark it as submitted
       if (AssessmentProgress) {
         const progress = await AssessmentProgress.findOne({
-          where: { user_id: result.user_id }
+          where: { user_id: result.user_id, status: 'DRAFT' }
         });
         
         if (progress) {
-          // Save the assessment progress snapshot to the result
+          // Keep a lightweight metrics snapshot on the result for admin
+          // dashboards (answers now live in assessment_progress_answers).
           const assessmentDetails = {
             user_id: progress.user_id,
-            answers: progress.answers,
+            assessment_progress_id: progress.id,
             current_page: progress.current_page,
             ui_state: progress.ui_state,
             total_questions: progress.total_questions,
@@ -82,14 +87,12 @@ module.exports = (sequelize, type) => {
           
           await result.update({ assessment_details: assessmentDetails });
           
-          // Reset the assessment progress
+          // Finalize the progress: submitted + linked to the result.
+          // A fresh DRAFT will be created lazily the next time the user
+          // opens the assessment.
           await progress.update({
-            answers: {},
-            current_page: 0,
-            ui_state: {},
-            answered_questions: 0,
-            completion_percentage: 0.00,
-            started_at: null
+            status: 'SUBMITTED',
+            result_id: result.id
           });
         }
       }
