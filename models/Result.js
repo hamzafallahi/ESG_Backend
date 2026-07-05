@@ -1,5 +1,5 @@
 const { DateTime, Duration } = require('luxon');
-const { notifyAdminsOfResultFeedback } = require('../helper/notificationHelper');
+const { notifyAdminsOfResultFeedback, notifyUserOfRankUpdate } = require('../helper/notificationHelper');
 
 module.exports = (sequelize, type) => {
   const Result = sequelize.define('results', {
@@ -139,6 +139,34 @@ module.exports = (sequelize, type) => {
             // Don't fail the result creation if inbox message fails
           }
         }
+      }
+
+      // Recompute rankings for the current year and broadcast SSE events.
+      // This runs after the result is persisted so the new score is included.
+      try {
+        const rankingService = require('../services/rankingService');
+        const { changed, year, triggerRanking } =
+          await rankingService.recomputeCurrentYearRankings(result.id, result.user_id);
+        for (const c of changed) {
+          notifyUserOfRankUpdate(c.userId, {
+            rank: c.newRank,
+            previousRank: c.previousRank,
+            totalScore: c.totalScore,
+            totalParticipants: c.totalParticipants,
+            year
+          });
+        }
+        // Persist the ranking on the result for convenience/back-compat.
+        // Use the recomputed ranking for the submitting user so the rank is
+        // always mirrored onto the new result, even when the overall standings
+        // did not change (the new attempt still gets its rank for the graph).
+        const own = changed.find((c) => c.userId === result.user_id);
+        const ownRank = own ? own.newRank : triggerRanking ? triggerRanking.rank : null;
+        if (ownRank != null) {
+          await result.update({ current_rank: ownRank });
+        }
+      } catch (error) {
+        console.error('Error recomputing rankings after result creation:', error);
       }
     }
   });

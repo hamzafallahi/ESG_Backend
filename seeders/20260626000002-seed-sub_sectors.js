@@ -1,13 +1,12 @@
 'use strict';
 
 const { v4: uuidv4 } = require('uuid');
-const { SUBSECTOR_WEIGHTS } = require('../config/esgScoring');
 
-// The 6 automotive sub-sectors. Labels default to the code and can be edited by
-// admins later through the sub-sectors CRUD API.
-const SUB_SECTORS = Object.keys(SUBSECTOR_WEIGHTS).map((code) => ({
+// The 6 automotive sub-sectors. Labels default to the code and can be edited
+// by admins later through the sub-sectors CRUD API.
+const SUB_SECTORS = ['TS', 'FF', 'PL', 'CA', 'EE', 'MP'].map((code) => ({
   code,
-  label: code
+  label: code,
 }));
 
 module.exports = {

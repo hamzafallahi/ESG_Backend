@@ -1,7 +1,5 @@
 const db = require('../models');
 const {
-  SECTION_TITLE_TO_CODE,
-  pillarForCode,
   percentageToLevel,
   applyCoreCap,
 } = require('../config/esgScoring');
@@ -10,7 +8,6 @@ const { getWeightConfig } = require('./weightConfigService');
 const Question = db.question;
 const Section = db.section;
 const Category = db.category;
-const Domain = db.domain;
 
 const normalizeQuestionId = (id) => String(id || '').trim().replace(/[{}]/g, '').toLowerCase();
 
@@ -18,7 +15,6 @@ const normalizeAnswerValue = (value) => {
   if (typeof value === 'string') {
     return { type: value.toUpperCase() };
   }
-
   if (value && typeof value === 'object') {
     const normalized = { ...value };
     if (typeof normalized.type === 'string') {
@@ -26,7 +22,6 @@ const normalizeAnswerValue = (value) => {
     }
     return normalized;
   }
-
   return value;
 };
 
@@ -41,21 +36,9 @@ const buildNormalizedAnswersMap = (answers) => {
 };
 
 /**
- * Resolve the domain code for a section. Prefers the linked `domain`
- * association, then falls back to a mapping on the English/French title.
- */
-const resolveSectionCode = (section) => {
-  return (
-    section.domain?.code ||
-    SECTION_TITLE_TO_CODE[section.title] ||
-    SECTION_TITLE_TO_CODE[section.title_fr] ||
-    null
-  );
-};
-
-/**
  * Calculate every score (as a percentage) and the single global maturity level
- * from a structured answer map, weighted by the company's sub-sector.
+ * from a structured answer map, weighted per section by the company's
+ * sub-sector.
  *
  * Answer format per question:
  *   { type: 'YES'|'NN'|'NA'|'NAC', nac_percentage?: number }
@@ -63,22 +46,19 @@ const resolveSectionCode = (section) => {
  * Per-question contribution to a section ratio:
  *   YES  -> full score_value, included in denominator
  *   NN   -> 0 achieved, included in denominator
- *   NA   -> excluded from denominator (non-core). In a core section NA is
+ *   NA   -> excluded from denominator (non-core). In a core section, NA is
  *           treated as NN (0 achieved, kept in denominator).
  *   NAC  -> round(score_value * nac_percentage / 100), included in denominator
  *
- * Aggregation:
- *   sectionRatio = achieved / denominator                          (0-1)
- *   sectionPct   = round(sectionRatio * 100)                        (0-100)
- *   pillarPct    = Σ(weight * ratio) / Σ(weight) over pillar        (0-100)
- *   globalScore  = Σ(weight * ratio) / TOTAL_WEIGHT * 100           (0-100)
- *   coreScore    = Σ(weight * ratio) / Σ(weight) over core domains  (0-100)
+ * Aggregation (weights are per (sub_sector, section)):
+ *   sectionRatio = achieved / denominator                                  (0-1)
+ *   sectionPct   = round(sectionRatio * 100)                                (0-100)
+ *   pillarPct    = Σ(weight * ratio) / Σ(weight) over sections in category (0-100)
+ *   globalScore  = Σ(weight * ratio) / totalWeight * 100                    (0-100)
+ *   coreScore    = Σ(weight * ratio) / Σ(weight) over sections where core   (0-100)
  *
  * The global maturity level is derived from globalScore, then capped at N3
  * unless the Core aggregate reaches 60%.
- *
- * @param {Record<string, { type: string, nac_percentage?: number }>} answers
- * @param {string|null} subSector
  */
 const calculateAllScoresAndLevels = async (answers, subSector) => {
   const sections = await Section.findAll({
@@ -93,11 +73,6 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
         as: 'category',
         attributes: ['id', 'name', 'name_fr'],
       },
-      {
-        model: Domain,
-        as: 'domain',
-        attributes: ['id', 'code', 'pillar'],
-      },
     ],
   });
 
@@ -106,9 +81,11 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
 
   let unansweredCount = 0;
 
-  // Per-domain achieved/denominator totals keyed by domain code.
-  const domainTotals = {};
-  const coreCodes = new Set();
+  // Per-section achieved/denominator totals keyed by section id.
+  const sectionTotals = {};
+  const coreSectionIds = new Set();
+  // categoryName -> [sectionId]
+  const sectionsByCategory = {};
 
   const categoryScores = {};      // pillar percentage, keyed EN (+ FR)
   const subcategoryScores = {};   // { catName: { secTitle: pct } } EN (+ FR)
@@ -126,7 +103,6 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     const secTitle = section.title;
     const secTitleFr = section.title_fr;
     const isCore = section.core === true;
-    const code = resolveSectionCode(section);
     const questions = section.questions || [];
 
     let sectionAchieved = 0;
@@ -174,14 +150,10 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     const sectionRatio = sectionDenominator > 0 ? sectionAchieved / sectionDenominator : 0;
     const sectionPct = Math.round(sectionRatio * 100);
 
-    if (code) {
-      if (!domainTotals[code]) {
-        domainTotals[code] = { achieved: 0, denominator: 0 };
-      }
-      domainTotals[code].achieved += sectionAchieved;
-      domainTotals[code].denominator += sectionDenominator;
-      if (isCore) coreCodes.add(code);
-    }
+    sectionTotals[section.id] = { achieved: sectionAchieved, denominator: sectionDenominator };
+    if (isCore) coreSectionIds.add(section.id);
+    if (!sectionsByCategory[catName]) sectionsByCategory[catName] = [];
+    sectionsByCategory[catName].push(section.id);
 
     // Section percentage, indexed under EN + FR category / section names.
     setNested(subcategoryScores, catName, secTitle, sectionPct);
@@ -196,13 +168,13 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     }
   }
 
-  // Weighted percentage over a set of domain codes.
-  const weightedPct = (codes) => {
+  // Weighted percentage over a set of section ids.
+  const weightedPct = (sectionIds) => {
     let weightedSum = 0;
     let weightSum = 0;
-    codes.forEach((code) => {
-      const w = weights[code] || 0;
-      const totals = domainTotals[code];
+    sectionIds.forEach((id) => {
+      const w = weights[id] || 0;
+      const totals = sectionTotals[id];
       const r = totals && totals.denominator > 0 ? totals.achieved / totals.denominator : 0;
       weightedSum += w * r;
       weightSum += w;
@@ -210,45 +182,39 @@ const calculateAllScoresAndLevels = async (answers, subSector) => {
     return weightSum > 0 ? (weightedSum / weightSum) * 100 : 0;
   };
 
-  // Pillar (category) percentages.
-  const pillarCodes = { Environment: [], Social: [], Governance: [] };
-  Object.keys(domainTotals).forEach((code) => {
-    const pillar = pillarForCode(code);
-    if (pillar && pillarCodes[pillar]) pillarCodes[pillar].push(code);
-  });
-
-  const pillarScores = {
-    Environment: Math.round(weightedPct(pillarCodes.Environment)),
-    Social: Math.round(weightedPct(pillarCodes.Social)),
-    Governance: Math.round(weightedPct(pillarCodes.Governance)),
-  };
-
-  // Map pillar scores onto category names (EN + FR) for result_categories.
+  // Category (pillar) percentages, mapped onto both EN and FR names.
   const allCategories = await Category.findAll({ attributes: ['name', 'name_fr'] });
   allCategories.forEach((cat) => {
-    const pillarPct = pillarScores[cat.name];
-    if (pillarPct !== undefined) {
-      categoryScores[cat.name] = pillarPct;
-      if (cat.name_fr) categoryScores[cat.name_fr] = pillarPct;
-    }
+    const sectionIds = sectionsByCategory[cat.name] || [];
+    const pct = Math.round(weightedPct(sectionIds));
+    categoryScores[cat.name] = pct;
+    if (cat.name_fr) categoryScores[cat.name_fr] = pct;
   });
 
-  // Global weighted score (SG) over all domains using the sub-sector total.
+  // Global weighted score (SG) over all sections using the sub-sector total.
   let globalWeightedSum = 0;
-  Object.keys(domainTotals).forEach((code) => {
-    const totals = domainTotals[code];
-    const domainRatio = totals && totals.denominator > 0 ? totals.achieved / totals.denominator : 0;
-    globalWeightedSum += (weights[code] || 0) * domainRatio;
+  Object.keys(sectionTotals).forEach((id) => {
+    const totals = sectionTotals[id];
+    const ratio = totals && totals.denominator > 0 ? totals.achieved / totals.denominator : 0;
+    globalWeightedSum += (weights[id] || 0) * ratio;
   });
   const globalScoreExact = total > 0 ? (globalWeightedSum / total) * 100 : 0;
   const globalScore = Math.round(globalScoreExact);
 
-  // Aggregate Core-domain score and the level gate.
-  const coreScoreExact = weightedPct([...coreCodes]);
+  // Aggregate Core-section score and the level gate.
+  const coreScoreExact = weightedPct([...coreSectionIds]);
   const coreScore = Math.round(coreScoreExact);
 
   const rawGlobalLevel = percentageToLevel(globalScoreExact);
   const globalLevel = applyCoreCap(rawGlobalLevel, coreScoreExact);
+
+  // Pillar scores as a flat EN-only shape (kept for backwards compatibility
+  // with any caller that still reads pillarScores.Environment/Social/Governance).
+  const pillarScores = {
+    Environment: categoryScores.Environment ?? 0,
+    Social: categoryScores.Social ?? 0,
+    Governance: categoryScores.Governance ?? 0,
+  };
 
   return {
     globalScore,
@@ -274,4 +240,3 @@ module.exports = {
   applyCoreCap,
   calculateAllScoresAndLevels,
 };
-

@@ -10,7 +10,6 @@ const sectionRoutes = require('./sections');
 const questionRoutes = require('./questions');
 const rsciRoutes = require('./rscis');
 const subSectorRoutes = require('./subsectors');
-const domainRoutes = require('./domains');
 const authRoutes = require('./auth');
 const adminRoutes = require('./admins');
 const superAdminRoutes = require('./superadmins');
@@ -23,6 +22,8 @@ const inboxMessageRoutes = require('./inboxMessages');
 const messageReadRoutes = require('./messageReads');
 const inboxActionsRoutes = require('./inboxActions');
 const uploadRoutes = require('./upload');
+const rankingRoutes = require('./rankings');
+const resultsIntroductionRoutes = require('./resultsIntroduction');
 const router = express.Router();
 
 // Public routes (no authentication required)
@@ -45,7 +46,6 @@ router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
 router.use('/rscis', rsciRoutes);
 router.use('/sub-sectors', subSectorRoutes);
-router.use('/domains', domainRoutes);
 router.use('/admins', adminRoutes);
 router.use('/super-admins', superAdminRoutes);
 router.use('/users', userRoutes);
@@ -55,5 +55,7 @@ router.use('/settings', settingsRoutes);
 router.use('/inbox-messages', inboxMessageRoutes);
 router.use('/message-reads', messageReadRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/rankings', rankingRoutes);
+router.use('/results-introduction', resultsIntroductionRoutes);
 
 module.exports = router;    

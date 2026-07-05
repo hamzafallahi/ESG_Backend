@@ -24,7 +24,7 @@ const attachmentSchema = Joi.object({
 
 const justificationSchema = Joi.object({
   proof_type: Joi.string().max(100).allow(null, ''),
-  description: Joi.string().min(50).max(500).allow(null, ''),
+  description: Joi.string().min(10).max(500).allow(null, ''),
   document_date: Joi.date().iso().max('now').allow(null),
   reference_number: Joi.string().max(100).allow(null, ''),
   evaluator_comment: Joi.string().max(500).allow(null, ''),

@@ -3,41 +3,38 @@
 /**
  * Weight configuration service.
  *
- * Loads per-sub-sector domain weights from the database (sub_sectors,
- * domains, subsector_weights) and caches them in memory so scoring does not hit
- * the DB for weights on every assessment submission.
+ * Loads per-sub-sector section weights from the database (sub_sectors,
+ * sections, subsector_weights) and caches them in memory so scoring does not
+ * hit the DB on every submission.
  *
- * The cache is keyed by the upper-cased sub-sector code and must be invalidated
- * (clearWeightCache) whenever an admin writes to sub_sectors or
- * subsector_weights.
+ * Cache is keyed by the upper-cased sub-sector code. It must be invalidated
+ * (clearWeightCache) after any admin write to sub_sectors, subsector_weights
+ * or sections.
  *
- * Shape returned by getWeightConfig (mirrors the legacy config helper):
- *   { weights: { [domainCode]: number }, total: number }
- * where `total` is the SUM of the sub-sector's weights (no magic constant).
+ * Shape returned by getWeightConfig:
+ *   { weights: { [sectionId]: number }, total: number }
+ * where `total` is the SUM of the sub-sector's weights.
  */
 
 const db = require('../models');
 
 const SubSector = db.sub_sector;
-const Domain = db.domain;
+const Section = db.section;
 const SubsectorWeight = db.subsector_weight;
 
 // subSectorCode (UPPER) -> { weights, total }
 const cache = new Map();
 
-/**
- * Build a uniform fallback (every known domain weighted 1) so scoring still
- * works when a sub-sector is missing/unknown or has no configured weights.
- */
+/** Uniform fallback: every section weighted 1. */
 const buildUniformConfig = async () => {
-  const domains = await Domain.findAll({ attributes: ['code'] });
+  const sections = await Section.findAll({ attributes: ['id'] });
   const weights = {};
-  domains.forEach((d) => { weights[d.code] = 1; });
-  return { weights, total: domains.length || 0 };
+  sections.forEach((s) => { weights[s.id] = 1; });
+  return { weights, total: sections.length || 0 };
 };
 
 /**
- * Resolve the weight map for a given sub-sector code, using the in-memory cache.
+ * Resolve the weight map for a sub-sector, using the in-memory cache.
  * @param {string|null|undefined} subSector
  * @returns {Promise<{ weights: Record<string, number>, total: number }>}
  */
@@ -57,7 +54,7 @@ const getWeightConfig = async (subSector) => {
         {
           model: SubsectorWeight,
           as: 'subsector_weights',
-          include: [{ model: Domain, as: 'domain', attributes: ['code'] }],
+          include: [{ model: Section, as: 'section', attributes: ['id'] }],
         },
       ],
     });
@@ -66,18 +63,16 @@ const getWeightConfig = async (subSector) => {
       const weights = {};
       let total = 0;
       subSectorRow.subsector_weights.forEach((w) => {
-        const code = w.domain?.code;
-        if (!code) return;
+        const sectionId = w.section?.id || w.section_id;
+        if (!sectionId) return;
         const value = Number(w.weight) || 0;
-        weights[code] = value;
+        weights[sectionId] = value;
         total += value;
       });
       config = { weights, total };
     }
   }
 
-  // Unknown sub-sector or no weights configured -> uniform fallback (not cached
-  // by sub-sector key so a later seed/config is picked up).
   if (!config) {
     return buildUniformConfig();
   }
@@ -87,9 +82,8 @@ const getWeightConfig = async (subSector) => {
 };
 
 /**
- * Invalidate the weight cache. Call after any write to sub_sectors or
- * subsector_weights so scoring reflects the change without a restart.
- * @param {string} [subSector] - optional specific code to evict; clears all when omitted.
+ * Invalidate the weight cache.
+ * @param {string} [subSector] - specific code to evict; clears all when omitted.
  */
 const clearWeightCache = (subSector) => {
   if (subSector) {
@@ -98,6 +92,7 @@ const clearWeightCache = (subSector) => {
     cache.clear();
   }
 };
+
 module.exports = {
   getWeightConfig,
   clearWeightCache,

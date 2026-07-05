@@ -1,13 +1,13 @@
 /**
- * Deserializes the payload used to bulk-set the per-domain weights of a
+ * Deserializes the payload used to bulk-set the per-section weights of a
  * sub-sector.
  *
  * Accepts either of:
- *   { data: { weights: { "E1": 39.9, "E2": 49.5 } } }
+ *   { data: { weights: { "<sectionId>": 39.9, ... } } }
  *   { data: { attributes: { weights: { ... } } } }
- *   { data: { weights: [ { domain_code: "E1", weight: 39.9 } ] } }
+ *   { data: { weights: [ { section_id: "...", weight: 39.9 } ] } }
  *
- * Always resolves to `{ weights: { [domainCode]: number } }`.
+ * Always resolves to `{ weights: { [sectionId]: number } }`.
  */
 class SubsectorWeightDeserializer {
   static async deserialize(payload) {
@@ -21,13 +21,13 @@ class SubsectorWeightDeserializer {
 
     if (Array.isArray(raw)) {
       raw.forEach((item) => {
-        if (item && item.domain_code !== undefined) {
-          weights[item.domain_code] = item.weight;
+        if (item && item.section_id !== undefined) {
+          weights[item.section_id] = item.weight;
         }
       });
     } else if (raw && typeof raw === 'object') {
-      Object.entries(raw).forEach(([code, weight]) => {
-        weights[code] = weight;
+      Object.entries(raw).forEach(([sectionId, weight]) => {
+        weights[sectionId] = weight;
       });
     }
 

@@ -9,9 +9,9 @@ module.exports = (sequelize, DataTypes) => {
         as: 'sub_sector',
         onDelete: 'CASCADE'
       });
-      SubsectorWeight.belongsTo(models.domain, {
-        foreignKey: 'domain_id',
-        as: 'domain',
+      SubsectorWeight.belongsTo(models.section, {
+        foreignKey: 'section_id',
+        as: 'section',
         onDelete: 'CASCADE'
       });
     }
@@ -31,11 +31,11 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
-    domain_id: {
+    section_id: {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'domains',
+        model: 'sections',
         key: 'id'
       }
     },

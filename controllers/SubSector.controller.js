@@ -1,6 +1,7 @@
 const db = require('../models');
 const SubSector = db.sub_sector;
-const Domain = db.domain;
+const Section = db.section;
+const Category = db.category;
 const SubsectorWeight = db.subsector_weight;
 const SubSectorSerializer = require('../serializer/subsectorserializer.js');
 const SubSectorInlineSerializer = require('../serializer/SubSector.inline.serializer.js');
@@ -22,20 +23,15 @@ const crudOps = createCrudOperations({
 });
 
 const getAllSubSectors = async (req, res, next) => {
-  try {
-    await crudOps.getAllWithPagination(req, res, next);
-  } catch (error) {
-    next(error);
-  }
+  try { await crudOps.getAllWithPagination(req, res, next); }
+  catch (error) { next(error); }
 };
 
 const getSubSectorById = async (req, res, next) => {
   try {
     req.params.id = req.params.subSectorId;
     await crudOps.getById(req, res, next);
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 const createSubSector = async (req, res, next) => {
@@ -43,7 +39,6 @@ const createSubSector = async (req, res, next) => {
     const businessError = new BusinessError(400, "Bad Request");
 
     if (req.body.code) {
-      // Codes are matched case-insensitively by the scoring engine.
       req.body.code = req.body.code.toUpperCase();
       const existing = await SubSector.findOne({ where: { code: req.body.code } });
       if (existing) {
@@ -56,19 +51,14 @@ const createSubSector = async (req, res, next) => {
     const newSubSector = await SubSector.create(req.body);
     clearWeightCache(newSubSector.code);
     res.status(201).json(SubSectorSerializer.serialize(newSubSector));
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 const updateSubSector = async (req, res, next) => {
   try {
     const id = req.params.subSectorId;
     const subSector = await SubSector.findByPk(id);
-
-    if (!subSector) {
-      throw new NotFoundError("SubSector not found", "SubSector");
-    }
+    if (!subSector) throw new NotFoundError("SubSector not found", "SubSector");
 
     const businessError = new BusinessError(400, "Bad Request");
     const previousCode = subSector.code;
@@ -86,38 +76,35 @@ const updateSubSector = async (req, res, next) => {
     if (businessError.errors.length > 0) throw businessError;
 
     await subSector.update(req.body);
-    // Evict both old and new code so scoring reflects the change immediately.
     clearWeightCache(previousCode);
     clearWeightCache(subSector.code);
     res.json(SubSectorSerializer.serialize(subSector));
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 const deleteSubSector = async (req, res, next) => {
   try {
     const id = req.params.subSectorId;
     const subSector = await SubSector.findByPk(id);
-
-    if (!subSector) {
-      throw new NotFoundError("SubSector not found", "SubSector");
-    }
+    if (!subSector) throw new NotFoundError("SubSector not found", "SubSector");
 
     const code = subSector.code;
     await subSector.destroy();
     clearWeightCache(code);
     res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 // Build the { sub_sector, weights[] } response for a sub-sector's weight set.
 const buildWeightsResponse = async (subSector) => {
   const weights = await SubsectorWeight.findAll({
     where: { sub_sector_id: subSector.id },
-    include: [{ model: Domain, as: 'domain', attributes: ['id', 'code', 'pillar'] }],
+    include: [{
+      model: Section,
+      as: 'section',
+      attributes: ['id', 'title', 'title_fr', 'core', 'category_id'],
+      include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'name_fr'] }],
+    }],
   });
 
   return {
@@ -130,9 +117,13 @@ const buildWeightsResponse = async (subSector) => {
         active: subSector.active,
       },
       weights: weights.map((w) => ({
-        domain_id: w.domain_id,
-        domain_code: w.domain?.code || null,
-        pillar: w.domain?.pillar || null,
+        section_id: w.section_id,
+        section_title: w.section?.title || null,
+        section_title_fr: w.section?.title_fr || null,
+        core: !!w.section?.core,
+        category_id: w.section?.category_id || null,
+        category_name: w.section?.category?.name || null,
+        category_name_fr: w.section?.category?.name_fr || null,
         weight: Number(w.weight),
       })),
       total: weights.reduce((sum, w) => sum + Number(w.weight), 0),
@@ -143,69 +134,64 @@ const buildWeightsResponse = async (subSector) => {
 const getSubSectorWeights = async (req, res, next) => {
   try {
     const subSector = await SubSector.findByPk(req.params.subSectorId);
-    if (!subSector) {
-      throw new NotFoundError("SubSector not found", "SubSector");
-    }
+    if (!subSector) throw new NotFoundError("SubSector not found", "SubSector");
     res.json(await buildWeightsResponse(subSector));
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
-// Bulk (partial) set of per-domain weights for a sub-sector. Only the domain
-// codes present in the payload are created/updated; others are left untouched.
+/**
+ * Bulk (partial) set of per-section weights for a sub-sector. Only the section
+ * ids present in the payload are created/updated; others are left untouched.
+ * Payload: { data: { weights: { "<sectionId>": 39.9, ... } } }
+ */
 const setSubSectorWeights = async (req, res, next) => {
   try {
     const subSector = await SubSector.findByPk(req.params.subSectorId);
-    if (!subSector) {
-      throw new NotFoundError("SubSector not found", "SubSector");
-    }
+    if (!subSector) throw new NotFoundError("SubSector not found", "SubSector");
 
     const businessError = new BusinessError(400, "Bad Request");
     const { weights = {} } = req.body;
+    const sectionIds = Object.keys(weights);
 
-    const codes = Object.keys(weights);
-    if (codes.length === 0) {
+    if (sectionIds.length === 0) {
       businessError.addError("data.weights", "At least one weight is required");
       throw businessError;
     }
 
-    for (const [code, value] of Object.entries(weights)) {
+    for (const [id, value] of Object.entries(weights)) {
       if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-        businessError.addError(`data.weights.${code}`, "Weight must be a non-negative number");
+        businessError.addError(`data.weights.${id}`, "Weight must be a non-negative number");
       }
     }
     if (businessError.errors.length > 0) throw businessError;
 
-    const domains = await Domain.findAll({ where: { code: codes } });
-    const domainByCode = {};
-    domains.forEach((d) => { domainByCode[d.code] = d; });
-
-    const missing = codes.filter((c) => !domainByCode[c]);
+    const foundSections = await Section.findAll({
+      where: { id: sectionIds },
+      attributes: ['id'],
+    });
+    const foundIds = new Set(foundSections.map((s) => s.id));
+    const missing = sectionIds.filter((id) => !foundIds.has(id));
     if (missing.length > 0) {
-      businessError.addError("data.weights", `Unknown domain codes: ${missing.join(", ")}`);
+      businessError.addError("data.weights", `Unknown section ids: ${missing.join(", ")}`);
       throw businessError;
     }
 
     await db.sequelize.transaction(async (t) => {
-      for (const code of codes) {
-        const domainId = domainByCode[code].id;
+      for (const sectionId of sectionIds) {
         const [row, created] = await SubsectorWeight.findOrCreate({
-          where: { sub_sector_id: subSector.id, domain_id: domainId },
-          defaults: { weight: weights[code] },
+          where: { sub_sector_id: subSector.id, section_id: sectionId },
+          defaults: { weight: weights[sectionId] },
           transaction: t,
         });
         if (!created) {
-          await row.update({ weight: weights[code] }, { transaction: t });
+          await row.update({ weight: weights[sectionId] }, { transaction: t });
         }
       }
     });
 
     clearWeightCache(subSector.code);
     res.json(await buildWeightsResponse(subSector));
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 module.exports = {

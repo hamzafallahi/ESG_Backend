@@ -7,9 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'category_id',
         as: 'category'
       });
-      Section.belongsTo(models.domain, {
-        foreignKey: 'domain_id',
-        as: 'domain'
+      Section.hasMany(models.subsector_weight, {
+        foreignKey: 'section_id',
+        as: 'subsector_weights',
+        onDelete: 'CASCADE'
       });
       Section.hasMany(models.question, {
         foreignKey: 'section_id',
@@ -34,14 +35,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       references: {
         model: 'categories',
-        key: 'id'
-      }
-    },
-    domain_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: 'domains',
         key: 'id'
       }
     },

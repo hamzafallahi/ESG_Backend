@@ -9,7 +9,8 @@ const EVENT_TYPES = {
   CONTACT_US: 'contact_us',
   BUG_REPORT: 'bug_report',
   SUPPORT_REQUEST: 'support_request',
-  RESULT_FEEDBACK: 'result_feedback'
+  RESULT_FEEDBACK: 'result_feedback',
+  RANK_UPDATE: 'rank_update'
 };
 
 /**
@@ -120,6 +121,20 @@ function notifyAdminsOfResultFeedback(userId, userName, organizationName, result
   });
 }
 
+/**
+ * Notify a user that their ranking has been updated.
+ */
+function notifyUserOfRankUpdate(userId, { rank, previousRank, totalScore, totalParticipants, year }) {
+  notifyUser(userId, EVENT_TYPES.RANK_UPDATE, {
+    rank,
+    previousRank,
+    totalScore,
+    totalParticipants,
+    year,
+    message: `Your ranking has been updated: #${rank} of ${totalParticipants}`
+  });
+}
+
 module.exports = {
   EVENT_TYPES,
   notifyUser,
@@ -129,5 +144,6 @@ module.exports = {
   notifyAdminsOfContactUs,
   notifyAdminsOfBugReport,
   notifyAdminsOfSupportRequest,
-  notifyAdminsOfResultFeedback
+  notifyAdminsOfResultFeedback,
+  notifyUserOfRankUpdate
 };

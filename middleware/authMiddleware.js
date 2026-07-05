@@ -39,16 +39,30 @@ const authenticate = async (req, res, next) => {
   try {
     const url = req.originalUrl || '';
     const normalizedUrl = url.toLowerCase();
+    const isRankingRoute = normalizedUrl.includes('/rankings');
+    const isRankingAdminAction =
+      normalizedUrl.includes('/rankings/reset') || normalizedUrl.includes('/rankings/recompute');
+    const isInboxActionsRoute = normalizedUrl.includes('/inbox-actions');
+    const isInboxAdminAction =
+      normalizedUrl.includes('/retake-request/') &&
+      (normalizedUrl.includes('/approve') || normalizedUrl.includes('/disapprove'));
     const isAssessmentProgressMeRoute = normalizedUrl.includes('/assessment-progress/me');
     const isUserPreferredRoute =
       (normalizedUrl.includes('/auth/me') && !normalizedUrl.includes('/auth/admin')) ||
       normalizedUrl.includes('/profile') ||
+      (isRankingRoute && !isRankingAdminAction) ||
+      // User inbox routes should resolve against the user token first.
+      // Otherwise, when both cookies exist, admin_token may be selected and
+      // downstream user lookups fail with "User not found".
+      (isInboxActionsRoute && !isInboxAdminAction) ||
       isAssessmentProgressMeRoute;
 
     const isAdminPreferredRoute =
       normalizedUrl.includes('/auth/admin') ||
       normalizedUrl.includes('/admins') ||
       normalizedUrl.includes('/super-admins') ||
+      isRankingAdminAction ||
+      isInboxAdminAction ||
       (normalizedUrl.includes('/assessment-progress') && !isAssessmentProgressMeRoute);
 
     const token = getTokenFromCookie(
@@ -180,8 +194,11 @@ const optionalAuthenticate = async (req, res, next) => {
  */
 const authenticateSSE = async (req, res, next) => {
   try {
-    // Prefer cookie auth for SSE
-    let token = getTokenFromCookie(req);
+    // For SSE, choose token preference by endpoint.
+    // /events/admin should prefer admin token, /events should prefer user token.
+    const url = (req.originalUrl || '').toLowerCase();
+    const prefersAdmin = url.includes('/events/admin');
+    const token = getTokenFromCookie(req, prefersAdmin ? 'admin' : 'user');
 
    
 
