@@ -47,6 +47,8 @@ const authenticate = async (req, res, next) => {
       normalizedUrl.includes('/retake-request/') &&
       (normalizedUrl.includes('/approve') || normalizedUrl.includes('/disapprove'));
     const isAssessmentProgressMeRoute = normalizedUrl.includes('/assessment-progress/me');
+    const isResultSubmissionRoute =
+      normalizedUrl.includes('/results') && req.method === 'POST';
     const isUserPreferredRoute =
       (normalizedUrl.includes('/auth/me') && !normalizedUrl.includes('/auth/admin')) ||
       normalizedUrl.includes('/profile') ||
@@ -55,7 +57,8 @@ const authenticate = async (req, res, next) => {
       // Otherwise, when both cookies exist, admin_token may be selected and
       // downstream user lookups fail with "User not found".
       (isInboxActionsRoute && !isInboxAdminAction) ||
-      isAssessmentProgressMeRoute;
+      isAssessmentProgressMeRoute ||
+      isResultSubmissionRoute;
 
     const isAdminPreferredRoute =
       normalizedUrl.includes('/auth/admin') ||
