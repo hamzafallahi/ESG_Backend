@@ -73,7 +73,7 @@ const signupSchema = {
       city: Joi.string().max(100).required(),
       state: Joi.string().max(100).required(),
       country: Joi.string().max(100).required(),
-      description: Joi.string().max(2000),
+      description: Joi.string().max(2000).optional(),
       tax_number: Joi.string().max(100).required(),
       linkedin: Joi.string().max(255),
       facebook: Joi.string().max(255),
