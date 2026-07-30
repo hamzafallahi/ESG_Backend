@@ -40,15 +40,7 @@ const crudOps = createCrudOperations({
   defaultIncludes: ["result_categories", "result_sections"],
 });
 
-const isAdminRequest = (req) => req.userRole === 'admin' || req.userRole === 'super_admin';
 
-const assertCanAccessResult = (req, result) => {
-  if (isAdminRequest(req) || result.user_id === req.userId) return;
-
-  const businessError = new BusinessError(403, "Forbidden");
-  businessError.addError('attributes.user_id', 'You are not allowed to access this result');
-  throw businessError;
-};
 
 // Custom getAll with pagination
 const getAll = async (req, res, next) => {
@@ -61,20 +53,7 @@ const getAll = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const result = await Result.findByPk(id, {
-      include: [
-        { model: ResultCategory, as: 'result_categories' },
-        { model: ResultSection, as: 'result_sections' },
-      ],
-    });
-
-    if (!result) {
-      throw new NotFoundError("Result not found", "Result");
-    }
-
-    assertCanAccessResult(req, result);
-    res.json(ResultSerializer.serialize(result));
+    await crudOps.getById(req, res, next);
   } catch (error) {
     next(error);
   }
@@ -82,7 +61,7 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.body.user_id;
 
     // Validate user exists and check next_allowed_assessment_date
     const user = await User.findByPk(userId);

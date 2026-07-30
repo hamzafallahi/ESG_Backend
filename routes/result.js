@@ -9,7 +9,6 @@ const { requireAdmin, requireUser } = require('../middleware/authMiddleware.js')
 const router = express.Router();
 
 router.get('/', 
-  requireAdmin,
   validate(getAll), 
   resultController.getAll
 );
