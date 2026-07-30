@@ -13,32 +13,37 @@ const ProgressAnswer = db.assessment_progress_answer;
 const Justification = db.justification;
 const ANSWER_TYPES = ['YES', 'NN', 'NA', 'NAC'];
 
-const hasCompleteJustification = (answer) => {
+// A justification is considered "present" as soon as the client sent any
+// meaningful field — we persist partial drafts exactly as provided instead of
+// silently dropping them. The only case we treat as "no justification" is when
+// the client sent `justification: null` or an empty object (clearing the form).
+const hasJustificationData = (answer) => {
   const j = answer?.justification;
-  return Boolean(
-    answer?.type === 'YES' &&
-    j &&
-    j.proof_type &&
-    j.description &&
-    j.description.length >= 50 &&
-    j.document_date
+  if (!j || typeof j !== 'object' || Array.isArray(j)) return false;
+  return Boolean(answer?.type === 'YES' && (
+    j.proof_type ||
+    j.description ||
+    j.document_date ||
+    j.reference_number ||
+    j.evaluator_comment ||
+    (Array.isArray(j.attachment_urls) && j.attachment_urls.length > 0))
   );
 };
 
 const upsertJustification = async (questionId, answer, existingJustificationId, transaction) => {
-  if (!hasCompleteJustification(answer)) {
+  if (!hasJustificationData(answer)) {
     return null;
   }
 
   const j = answer.justification;
   const payload = {
     question_id: questionId,
-    proof_type: j.proof_type,
-    description: j.description,
-    document_date: j.document_date,
+    proof_type: j.proof_type || null,
+    description: j.description || null,
+    document_date: j.document_date || null,
     reference_number: j.reference_number || null,
     evaluator_comment: j.evaluator_comment || null,
-    attachments: j.attachment_urls || [],
+    attachments: Array.isArray(j.attachment_urls) ? j.attachment_urls : [],
   };
 
   if (existingJustificationId) {

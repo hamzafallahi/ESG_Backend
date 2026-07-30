@@ -52,13 +52,13 @@ module.exports = (sequelize, DataTypes) => {
       },
       proof_type: {
         type: DataTypes.ENUM(...PROOF_TYPES),
-        allowNull: false
+        allowNull: true
       },
       description: {
         type: DataTypes.STRING(500),
-        allowNull: false,
+        allowNull: true,
         validate: {
-          len: [50, 500]
+          len: { args: [0, 500], msg: 'description must be at most 500 characters' }
         }
       },
       attachments: {
@@ -68,7 +68,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       document_date: {
         type: DataTypes.DATEONLY,
-        allowNull: false
+        allowNull: true
       },
       reference_number: {
         type: DataTypes.STRING(100),
