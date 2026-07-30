@@ -44,7 +44,6 @@ const resultDataSchema = {
   type: Joi.string().valid("Result").required(),
   attributes: Joi.object()
     .keys({
-      user_id: Joi.string().uuid().required(),
       global_feedback: Joi.string().allow(null, ''),
       // All scores are computed server-side; only answers are required from the client
       answers: Joi.object()

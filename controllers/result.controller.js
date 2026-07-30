@@ -61,7 +61,7 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const userId = req.body.user_id;
+    const userId = req.userId;
 
     // Validate user exists and check next_allowed_assessment_date
     const user = await User.findByPk(userId);
