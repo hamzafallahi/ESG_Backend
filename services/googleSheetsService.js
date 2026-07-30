@@ -67,7 +67,6 @@ const appendResultToSheet = async (organizationName, phoneNumber, email, resultD
       },
     });
 
-    console.log(`Data appended to Google Sheets successfully. Updated ${response.data.updates.updatedRows} rows.`);
     return { success: true, message: 'Data appended to Google Sheets successfully', response: response.data };
   } catch (error) {
     console.error('Error appending to Google Sheets:', error);

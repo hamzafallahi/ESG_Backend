@@ -427,7 +427,6 @@ module.exports = {
       return true;
     });
 
-    console.log(`[question-rscis seeder] Inserting ${uniqueEntries.length} links (${entries.length - uniqueEntries.length} duplicates removed).`);
 
     if (uniqueEntries.length > 0) {
       // ignoreDuplicates so re-running the seeder is safe

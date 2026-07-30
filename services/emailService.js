@@ -821,7 +821,6 @@ const sendResultEmail = async (email, organizationName, phoneNumber, resultData,
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Email sent successfully to ${email}. MessageId: ${info.messageId}`);
     return { success: true, message: 'Email sent successfully', messageId: info.messageId };
   } catch (error) {
     console.error('Error sending email:', error);
