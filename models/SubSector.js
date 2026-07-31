@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    label_fr: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     active: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

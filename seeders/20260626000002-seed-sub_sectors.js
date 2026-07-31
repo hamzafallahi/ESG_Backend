@@ -2,31 +2,38 @@
 
 const { v4: uuidv4 } = require('uuid');
 
-// The 6 automotive sub-sectors.
+// The 6 automotive sub-sectors. `label` is the English label, `label_fr` the
+// French one.
 const SUB_SECTORS = [
   {
     code: 'TS',
-    label: 'Traitement de surface / Chimie',
+    label: 'Surface Treatment / Chemicals',
+    label_fr: 'Traitement de surface / Chimie',
   },
   {
     code: 'FF',
-    label: 'Fonderie / Forge / Métallurgie',
+    label: 'Foundry / Forging / Metallurgy',
+    label_fr: 'Fonderie / Forge / Métallurgie',
   },
   {
     code: 'PL',
-    label: 'Plasturgie / Injection / Composites',
+    label: 'Plastics Processing / Injection Molding / Composites',
+    label_fr: 'Plasturgie / Injection / Composites',
   },
   {
     code: 'CA',
-    label: 'Câblage / Assemblage électrique',
+    label: 'Wiring / Electrical Assembly',
+    label_fr: 'Câblage / Assemblage électrique',
   },
   {
     code: 'EE',
-    label: 'Électronique embarquée / Logiciel',
+    label: 'Embedded Electronics / Software',
+    label_fr: 'Électronique embarquée / Logiciel',
   },
   {
     code: 'MP',
-    label: 'Mécanique de précision / Usinage',
+    label: 'Precision Mechanics / Machining',
+    label_fr: 'Mécanique de précision / Usinage',
   },
 ];
 
@@ -52,6 +59,7 @@ module.exports = {
       id: uuidv4(),
       code: s.code,
       label: s.label,
+      label_fr: s.label_fr,
       active: true,
       created_at: now,
       updated_at: now,
@@ -67,6 +75,7 @@ module.exports = {
         'sub_sectors',
         {
           label: subSector.label,
+          label_fr: subSector.label_fr,
           updated_at: now,
         },
         {

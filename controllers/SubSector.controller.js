@@ -10,7 +10,7 @@ const NotFoundError = require('../error/exception/NotFound.js');
 const BusinessError = require('../error/BusinessError');
 const { clearWeightCache } = require('../services/weightConfigService');
 
-const allowedFields = ["id", "code", "label", "active", "created_at", "updated_at"];
+const allowedFields = ["id", "code", "label", "label_fr", "active", "created_at", "updated_at"];
 
 const crudOps = createCrudOperations({
   Model: SubSector,
@@ -114,6 +114,7 @@ const buildWeightsResponse = async (subSector) => {
       attributes: {
         code: subSector.code,
         label: subSector.label,
+        label_fr: subSector.label_fr,
         active: subSector.active,
       },
       weights: weights.map((w) => ({

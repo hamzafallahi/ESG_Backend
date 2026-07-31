@@ -1,8 +1,8 @@
 const Joi = require("joi");
 
-const ALLOWED_FIELDS = ["id", "code", "label", "active", "created_at", "updated_at"];
+const ALLOWED_FIELDS = ["id", "code", "label", "label_fr", "active", "created_at", "updated_at"];
 
-const ALLOWED_SORT_FIELDS = ["code", "label", "active", "created_at", "updated_at"];
+const ALLOWED_SORT_FIELDS = ["code", "label", "label_fr", "active", "created_at", "updated_at"];
 
 const subSectorDataSchema = {
   type: Joi.string().valid("sub_sectors").required(),
@@ -10,6 +10,7 @@ const subSectorDataSchema = {
     .keys({
       code: Joi.string().max(50).required(),
       label: Joi.string().max(255).allow(null, ""),
+      label_fr: Joi.string().max(255).allow(null, ""),
       active: Joi.boolean(),
     })
     .required(),
@@ -20,6 +21,7 @@ const subSectorUpdateDataSchema = {
   attributes: Joi.object().keys({
     code: Joi.string().max(50),
     label: Joi.string().max(255).allow(null, ""),
+    label_fr: Joi.string().max(255).allow(null, ""),
     active: Joi.boolean(),
   }),
 };
