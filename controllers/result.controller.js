@@ -45,6 +45,32 @@ const crudOps = createCrudOperations({
 // Custom getAll with pagination
 const getAll = async (req, res, next) => {
   try {
+    const userId = req.userId;
+
+    if (req.userRole === 'user') {
+      req.query.filter = req.query.filter || {};
+      const filterUserId = req.query.filter.user_id;
+
+      const passedIds =
+        filterUserId === undefined || filterUserId === null
+          ? []
+          : String(filterUserId)
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+      if (passedIds.length > 0 && passedIds.some((id) => id !== userId)) {
+        const businessError = new BusinessError(403, 'FORBIDDEN', 'Forbidden');
+        businessError.addError(
+          'filter.user_id',
+          'You can only view your own results'
+        );
+        throw businessError;
+      }
+
+      req.query.filter.user_id = userId;
+    }
+
     await crudOps.getAllWithPagination(req, res, next);
   } catch (error) {
     next(error);
@@ -53,6 +79,25 @@ const getAll = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
+    /*    const userId = req.userId;
+
+        if (req.userRole === 'user') {
+          const { id } = req.params;
+          const result = await Result.findByPk(id, {
+            attributes: ['id', 'user_id'],
+          });
+
+          if (!result) {
+            throw new NotFoundError('Result not found', 'Result');
+          }
+
+          if (result.user_id !== userId) {
+            const businessError = new BusinessError(403, 'FORBIDDEN', 'Forbidden');
+            businessError.addError('id', 'You can only view your own results');
+            throw businessError;
+          }
+        }*/
+
     await crudOps.getById(req, res, next);
   } catch (error) {
     next(error);
