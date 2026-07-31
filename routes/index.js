@@ -34,7 +34,8 @@ router.use('/inbox-actions', inboxActionsRoutes);
 
 // SSE events use their own authentication middleware (supports query params)
 router.use('/events', eventRoutes);
-
+// Sub-sectors have mixed auth (some public, some admin)
+router.use('/sub-sectors', subSectorRoutes);
 // All routes below require authentication
 router.use(authenticate);
 
@@ -45,7 +46,6 @@ router.use('/categories', categoryRoutes);
 router.use('/sections', sectionRoutes);
 router.use('/questions', questionRoutes);
 router.use('/rscis', rsciRoutes);
-router.use('/sub-sectors', subSectorRoutes);
 router.use('/admins', adminRoutes);
 router.use('/super-admins', superAdminRoutes);
 router.use('/users', userRoutes);
