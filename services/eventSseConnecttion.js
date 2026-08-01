@@ -2,7 +2,7 @@
 const { v4: uuidv4 } = require('uuid');
 
 const KEEP_ALIVE_INTERVAL_MS = 25000;
-const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://localhost:5174','https://admin.esg-taa.tn/','https://esg-taa.tn'];
+const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://localhost:5174','https://admin.esg-taa.tn','https://esg-taa.tn'];
 
 const parseAllowedOrigins = () => {
   const raw = process.env.SSE_ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS;
