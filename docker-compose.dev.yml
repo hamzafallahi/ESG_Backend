@@ -36,20 +36,6 @@ services:
       - postgres
     restart: unless-stopped
 
-  pgadmin:
-    container_name: pgadmin_container_dev
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    volumes:
-      - pgadmin_dev:/var/lib/pgadmin
-    ports:
-      - "5051:80"
-    networks:
-      - postgres
-    restart: unless-stopped
 
 
 networks:
@@ -58,4 +44,3 @@ networks:
 
 volumes:
   postgres_dev:
-  pgadmin_dev:
