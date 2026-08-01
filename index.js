@@ -12,7 +12,7 @@ const setupSwagger = require("./config/swagger");
 env.config();
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'], 
+  origin: ['http://localhost:5173', 'http://localhost:5174','https://esg-taa.tn','https://admin.esg-taa.tn'], 
   methods: ['GET', 'POST', 'PATCH', 'DELETE','OPTIONS','PUT'],
     allowedHeaders: [
     'Content-Type', 
