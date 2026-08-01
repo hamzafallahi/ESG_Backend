@@ -12,7 +12,7 @@ const ALLOWED_FIELDS = [
 ];
 
 const resultDataSchema = Joi.object().keys({
-  globalScore: Joi.number().integer().min(0).max(955).required(),
+  globalScore: Joi.number().integer().min(0).required(),
   categoryScores: Joi.object().keys({
     "Environnement": Joi.number().integer().min(0).max(235).required(),
     "Social": Joi.number().integer().min(0).max(405).required(),

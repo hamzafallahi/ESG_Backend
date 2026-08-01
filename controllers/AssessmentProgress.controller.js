@@ -5,10 +5,17 @@ const AssessmentProgressInlineSerializer = require('../serializer/AssessmentProg
 const { createCrudOperations } = require('../utils/crudOperations.js');
 const NotFoundError = require('../error/exception/NotFound.js');
 const BusinessError = require('../error/BusinessError');
+const {
+  composeAnswers,
+  syncAnswers,
+  computeMetrics,
+} = require('../helper/progressAnswersHelper.js');
 
 const allowedFields = [
   "id",
   "user_id",
+  "status",
+  "result_id",
   "answers",
   "current_page",
   "ui_state",
@@ -30,6 +37,77 @@ const crudOps = createCrudOperations({
   defaultIncludes: [],
 });
 
+// Fields clients are never allowed to set directly — the lifecycle is
+// managed by the submission flow (see Result afterCreate hook).
+const stripManagedFields = (body) => {
+  const fields = { ...body };
+  delete fields.status;
+  delete fields.result_id;
+  return fields;
+};
+
+// Serialize a progress instance with its normalized answers composed back
+// into the legacy `answers` object shape.
+const serializeWithAnswers = async (progress) => {
+  const answers = await composeAnswers(progress.id);
+  return AssessmentProgressSerializer.serialize({
+    ...progress.toJSON(),
+    answers,
+  });
+};
+
+// Find the user's current DRAFT progress, creating one if needed.
+const findOrCreateDraft = async (userId) => {
+  let progress = await AssessmentProgress.findOne({
+    where: { user_id: userId, status: 'DRAFT' },
+  });
+
+  if (!progress) {
+    progress = await AssessmentProgress.create({
+      user_id: userId,
+      status: 'DRAFT',
+      current_page: 0,
+      ui_state: {},
+      total_questions: 0,
+      answered_questions: 0,
+      completion_percentage: 0.00,
+      started_at: null,
+    });
+  }
+
+  return progress;
+};
+
+// Apply an update (fields + answers sync) to a progress record inside a transaction.
+const applyProgressUpdate = async (progress, body) => {
+  const transaction = await db.sequelize.transaction();
+  try {
+    const { answers, ...rawFields } = stripManagedFields(body);
+    const fields = { ...rawFields };
+    delete fields.user_id;
+
+    if (answers !== undefined) {
+      const answeredCount = await syncAnswers(progress, answers, transaction);
+      const total = fields.total_questions !== undefined
+        ? fields.total_questions
+        : progress.total_questions;
+
+      Object.assign(fields, computeMetrics(answeredCount, total));
+
+      // Set started_at when the user first starts answering questions
+      if (!progress.started_at && answeredCount > 0) {
+        fields.started_at = new Date();
+      }
+    }
+
+    await progress.update(fields, { transaction });
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+};
+
 // Get all assessment progress records with pagination
 const getAll = async (req, res, next) => {
   try {
@@ -39,50 +117,55 @@ const getAll = async (req, res, next) => {
   }
 };
 
-// Get assessment progress by ID
+// Get assessment progress by ID (answers composed from normalized rows)
 const getById = async (req, res, next) => {
   try {
-    await crudOps.getById(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get assessment progress for the current logged-in user
-const getCurrentUserProgress = async (req, res, next) => {
-  try {
-    const userId = req.userId; // From auth middleware
-
-    const progress = await AssessmentProgress.findOne({
-      where: { user_id: userId },
-    });
+    const { id } = req.params;
+    const progress = await AssessmentProgress.findByPk(id);
 
     if (!progress) {
       throw new NotFoundError('Assessment progress not found', 'AssessmentProgress');
     }
 
-    const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());
-    res.json(serializedData);
+    res.json(await serializeWithAnswers(progress));
   } catch (error) {
     next(error);
   }
 };
 
-// Get assessment progress by user ID (admin use)
+// Get assessment progress for the current logged-in user (their DRAFT)
+const getCurrentUserProgress = async (req, res, next) => {
+  try {
+    const userId = req.userId; // From auth middleware
+    const progress = await findOrCreateDraft(userId);
+    res.json(await serializeWithAnswers(progress));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get assessment progress by user ID (admin use) — current DRAFT first,
+// falling back to the most recent submitted attempt.
 const getByUserId = async (req, res, next) => {
   try {
     const { userId } = req.params;
 
-    const progress = await AssessmentProgress.findOne({
-      where: { user_id: userId },
+    let progress = await AssessmentProgress.findOne({
+      where: { user_id: userId, status: 'DRAFT' },
     });
+
+    if (!progress) {
+      progress = await AssessmentProgress.findOne({
+        where: { user_id: userId },
+        order: [['updated_at', 'DESC']],
+      });
+    }
 
     if (!progress) {
       throw new NotFoundError('Assessment progress not found for this user', 'AssessmentProgress');
     }
 
-    const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());
-    res.json(serializedData);
+    res.json(await serializeWithAnswers(progress));
   } catch (error) {
     next(error);
   }
@@ -92,27 +175,39 @@ const getByUserId = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const businessError = new BusinessError(400, "Bad Request");
+    const { answers, ...rawFields } = stripManagedFields(req.body);
 
-    // Check if progress already exists for this user
-    if (req.body.user_id) {
-      const existingProgress = await AssessmentProgress.findOne({
-        where: { user_id: req.body.user_id }
-      });
-
-      if (existingProgress) {
-        businessError.addError('attributes.user_id', 'Assessment progress already exists for this user');
-      }
+    if (!rawFields.user_id) {
+      businessError.addError('attributes.user_id', 'user_id is required');
+      throw businessError;
     }
 
-    if (businessError.errors.length > 0) throw businessError;
+    // A user can only have one DRAFT progress at a time
+    const existingDraft = await AssessmentProgress.findOne({
+      where: { user_id: rawFields.user_id, status: 'DRAFT' }
+    });
 
-    await crudOps.create(req, res, next);
+    if (existingDraft) {
+      businessError.addError('attributes.user_id', 'A draft assessment progress already exists for this user');
+      throw businessError;
+    }
+
+    const progress = await AssessmentProgress.create({
+      ...rawFields,
+      status: 'DRAFT',
+    });
+
+    if (answers !== undefined && Object.keys(answers).length > 0) {
+      await applyProgressUpdate(progress, { answers });
+    }
+
+    res.status(201).json(await serializeWithAnswers(progress));
   } catch (error) {
     next(error);
   }
 };
 
-// Update assessment progress (user updates their progress)
+// Update assessment progress (admin, by id)
 const update = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -129,53 +224,27 @@ const update = async (req, res, next) => {
       throw businessError;
     }
 
-    await progress.update(req.body);
-    const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());
-    res.json(serializedData);
+    await applyProgressUpdate(progress, req.body);
+    res.json(await serializeWithAnswers(progress));
   } catch (error) {
     next(error);
   }
 };
 
-// Update current user's assessment progress
+// Update current user's assessment progress (their DRAFT)
 const updateCurrentUserProgress = async (req, res, next) => {
   try {
     const userId = req.userId; // From auth middleware
+    const progress = await findOrCreateDraft(userId);
 
-    let progress = await AssessmentProgress.findOne({
-      where: { user_id: userId }
-    });
-
-    if (!progress) {
-      // Create if doesn't exist (shouldn't happen but handle it)
-      progress = await AssessmentProgress.create({
-        user_id: userId,
-        answers: req.body.answers || {},
-        current_page: req.body.current_page || 0,
-        ui_state: req.body.ui_state || {},
-        total_questions: req.body.total_questions || 0,
-        started_at: req.body.answers && Object.keys(req.body.answers).length > 0 ? new Date() : null,
-      });
-    } else {
-      // Prevent changing user_id
-      delete req.body.user_id;
-      
-      // Set started_at when user first starts answering questions
-      if (!progress.started_at && req.body.answers && Object.keys(req.body.answers).length > 0) {
-        req.body.started_at = new Date();
-      }
-      
-      await progress.update(req.body);
-    }
-
-    const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());
-    res.json(serializedData);
+    await applyProgressUpdate(progress, req.body);
+    res.json(await serializeWithAnswers(progress));
   } catch (error) {
     next(error);
   }
 };
 
-// Delete assessment progress
+// Delete assessment progress (normalized answers cascade)
 const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -192,31 +261,34 @@ const remove = async (req, res, next) => {
   }
 };
 
-// Reset current user's assessment progress
+// Reset current user's assessment progress (clears the DRAFT)
 const resetCurrentUserProgress = async (req, res, next) => {
   try {
     const userId = req.userId; // From auth middleware
+    const progress = await findOrCreateDraft(userId);
 
-    const progress = await AssessmentProgress.findOne({
-      where: { user_id: userId }
-    });
+    const transaction = await db.sequelize.transaction();
+    try {
+      await db.assessment_progress_answer.destroy({
+        where: { assessment_progress_id: progress.id },
+        transaction,
+      });
 
-    if (!progress) {
-      throw new NotFoundError('Assessment progress not found', 'AssessmentProgress');
+      await progress.update({
+        current_page: 0,
+        ui_state: {},
+        answered_questions: 0,
+        completion_percentage: 0.00,
+        started_at: null, // Reset to null - will be set when user starts new assessment
+      }, { transaction });
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
 
-    // Reset to default values and set started_at to null
-    await progress.update({
-      answers: {},
-      current_page: 0,
-      ui_state: {},
-      answered_questions: 0,
-      completion_percentage: 0.00,
-      started_at: null, // Reset to null - will be set when user starts new assessment
-    });
-
-    const serializedData = AssessmentProgressSerializer.serialize(progress.toJSON());
-    res.json(serializedData);
+    res.json(await serializeWithAnswers(progress));
   } catch (error) {
     next(error);
   }

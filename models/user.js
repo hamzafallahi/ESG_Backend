@@ -5,10 +5,18 @@ const bcrypt = require('bcryptjs');
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      // Define associations here if needed
+      // Current draft progress (a user has at most one DRAFT at a time)
       User.hasOne(models.assessment_progress, {
         foreignKey: 'user_id',
         as: 'assessment_progress',
+        scope: { status: 'DRAFT' },
+        onDelete: 'CASCADE'
+      });
+
+      // Full progress history (drafts + submitted attempts)
+      User.hasMany(models.assessment_progress, {
+        foreignKey: 'user_id',
+        as: 'assessment_progress_history',
         onDelete: 'CASCADE'
       });
     }
@@ -32,12 +40,45 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    surname: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    position: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    sub_sector: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    website_url: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     organization_name: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notEmpty: {
           msg: 'Organization name cannot be empty'
+        }
+      }
+    },
+    organisation_phone_number: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    organisation_email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isEmail: {
+          msg: 'Must be a valid email address'
         }
       }
     },
@@ -49,6 +90,54 @@ module.exports = (sequelize, DataTypes) => {
           msg: 'Phone number cannot be empty'
         }
       }
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    postal_code: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    state: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    country: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    tax_number: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    linkedin: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    facebook: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    twitter: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    logo_url: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    video_url: {
+      type: DataTypes.STRING,
+      allowNull: true
     },
     email: {
       type: DataTypes.STRING,
@@ -110,7 +199,7 @@ module.exports = (sequelize, DataTypes) => {
         if (AssessmentProgress) {
           await AssessmentProgress.create({
             user_id: user.id,
-            answers: {},
+            status: 'DRAFT',
             current_page: 0,
             ui_state: {},
             total_questions: 0,

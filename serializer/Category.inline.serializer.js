@@ -12,11 +12,11 @@ const CategoryInlineSerializer = createInlineSerializer('category', {
   relationships: {
     sections: {
       type: 'section',
-      attributes: ['category_id', 'title', 'title_fr', 'description', 'created_at', 'updated_at']
+      attributes: ['category_id', 'title', 'title_fr', 'description', 'core', 'created_at', 'updated_at']
     },
     result_categories: {
       type: 'result_category',
-      attributes: [    'result_id', 'category_id',  'score', 'level', 'created_at', 'updated_at']
+      attributes: [    'result_id', 'category_id',  'score', 'created_at', 'updated_at']
     }
   }
 });

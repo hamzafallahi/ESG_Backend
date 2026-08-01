@@ -43,7 +43,7 @@ const appendResultToSheet = async (organizationName, phoneNumber, email, resultD
 
     const range = "Sheet1!A1:I1";
     const assessmentDate = new Date().toLocaleDateString('fr-FR');
-    const globalScore = `${resultData.globalScore} / 955`;
+    const globalScore = `${resultData.globalScore} / ${resultData.totalScore || 955}`;
     
     // Encode the resultData to create the link
     const encodedData = encodeURIComponent(JSON.stringify(resultData));
@@ -67,7 +67,6 @@ const appendResultToSheet = async (organizationName, phoneNumber, email, resultD
       },
     });
 
-    console.log(`Data appended to Google Sheets successfully. Updated ${response.data.updates.updatedRows} rows.`);
     return { success: true, message: 'Data appended to Google Sheets successfully', response: response.data };
   } catch (error) {
     console.error('Error appending to Google Sheets:', error);

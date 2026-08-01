@@ -5,7 +5,6 @@ const ResultSectionInlineSerializer = createInlineSerializer('result_section', {
     'result_id', 
     'section_id', 
     'score', 
-    'level', 
     'created_at', 
     'updated_at', 
     'deleted_at'
@@ -17,7 +16,7 @@ const ResultSectionInlineSerializer = createInlineSerializer('result_section', {
     },
     section: {
       type: 'section',
-      attributes: ['title', 'title_fr', 'description', 'created_at', 'updated_at']
+      attributes: ['title', 'title_fr', 'description', 'core', 'created_at', 'updated_at']
     }
   }
 });

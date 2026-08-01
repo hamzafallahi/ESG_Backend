@@ -8,11 +8,11 @@ const config = require('../config/app-config');
 const NotFoundError = require('../error/exception/NotFound');
 const BusinessError = require('../error/BusinessError');
 const TechnicalError = require('../error/TechnicalError');
+const { isValidSubSector } = require('../utils/subSectorValidation');
 
 // Signup - Register a new user
 exports.signup = async (req, res, next) => {
   try {
-    console.log('Signup request body:', req.body);
     // Check if user with this email already exists
     const existingUser = await User.findOne({
       where: { email: req.body.email }
@@ -22,6 +22,16 @@ exports.signup = async (req, res, next) => {
       const businessError = new BusinessError(409, 'EMAIL_IN_USE', 'Email already in use');
       businessError.addError('attributes.email', 'A user with this email already exists');
       throw businessError;
+    }
+
+    // Validate sub_sector against active sub-sectors (data-driven)
+    if (req.body.sub_sector) {
+      req.body.sub_sector = String(req.body.sub_sector).toUpperCase();
+      if (!(await isValidSubSector(req.body.sub_sector))) {
+        const businessError = new BusinessError(400, 'Bad Request');
+        businessError.addError('attributes.sub_sector', 'Invalid or inactive sub-sector');
+        throw businessError;
+      }
     }
 
     // Create new user
@@ -34,12 +44,18 @@ exports.signup = async (req, res, next) => {
       { expiresIn: config.JWT_EXPIRATION }
     );
 
-    // Return user data with token
+    // Set token as secure, HTTP-only cookie (also return user data)
+    const decoded = jwt.decode(token) || {};
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
+    };
+    res.cookie('user_token', token, cookieOptions);
+
     const serializedUser = AuthSerializer.serialize(user.toJSON());
-    return res.status(201).json({
-      ...serializedUser,
-      token
-    });
+    return res.status(201).json(serializedUser);
   } catch (error) {
     next(error);
   }
@@ -74,12 +90,18 @@ exports.login = async (req, res, next) => {
       { expiresIn: config.JWT_EXPIRATION }
     );
 
-    // Return user data with token
+    // Set token as secure, HTTP-only cookie (also return user data)
+    const decoded = jwt.decode(token) || {};
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
+    };
+    res.cookie('user_token', token, cookieOptions);
+
     const serializedUser = AuthSerializer.serialize(user.toJSON());
-    return res.status(200).json({
-      ...serializedUser,
-      token
-    });
+    return res.status(200).json(serializedUser);
   } catch (error) {
     next(error);
   }
@@ -88,6 +110,12 @@ exports.login = async (req, res, next) => {
 // Get current user info
 exports.getCurrentUser = async (req, res, next) => {
   try {
+    if (req.userRole !== 'user') {
+      const businessError = new BusinessError(401, 'INVALID_TOKEN', 'Invalid token for user endpoint');
+      businessError.addError('token', 'User token is required');
+      throw businessError;
+    }
+
     const user = await User.findByPk(req.userId);
     
     if (!user) {
@@ -145,7 +173,16 @@ exports.adminLogin = async (req, res, next) => {
       { expiresIn: config.JWT_EXPIRATION }
     );
 
-    // Return admin data with token (without password)
+    // Set token as secure, HTTP-only cookie and return admin data (without password)
+    const decoded = jwt.decode(token) || {};
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: decoded.exp ? new Date(decoded.exp * 1000) : undefined,
+    };
+    res.cookie('admin_token', token, cookieOptions);
+
     const userData = user.toJSON();
     return res.status(200).json({
       data: {
@@ -159,8 +196,7 @@ exports.adminLogin = async (req, res, next) => {
           is_active: userData.is_active,
           role: role
         }
-      },
-      token
+      }
     });
   } catch (error) {
     next(error);
@@ -170,6 +206,12 @@ exports.adminLogin = async (req, res, next) => {
 // Get current admin info
 exports.getCurrentAdmin = async (req, res, next) => {
   try {
+    if (req.userRole !== 'admin' && req.userRole !== 'super_admin') {
+      const businessError = new BusinessError(401, 'INVALID_TOKEN', 'Invalid token for admin endpoint');
+      businessError.addError('token', 'Admin token is required');
+      throw businessError;
+    }
+
     let user;
     let role;
     

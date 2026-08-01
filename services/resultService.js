@@ -15,7 +15,6 @@ const processResultData = async (userId, resultData, resultId) => {
   try {
     // Fetch user information
     const user = await User.findByPk(userId);
-    console.log('User fetched for result processing: 4444444444444444444444', user);
     
     if (!user) {
       throw new Error('User not found');
@@ -49,15 +48,11 @@ const processResultData = async (userId, resultData, resultId) => {
     };
 
     // Log results
-    if (results.email.success) {
-      console.log('✓ Email sent successfully');
-    } else {
+    if (!results.email.success) {
       console.error('✗ Email failed:', results.email.error);
     }
 
-    if (results.sheets.success) {
-      console.log('✓ Data saved to Google Sheets successfully');
-    } else {
+    if (!results.sheets.success) {
       console.error('✗ Google Sheets update failed:', results.sheets.error);
     }
 
@@ -80,6 +75,7 @@ const processResultData = async (userId, resultData, resultId) => {
 const calculateResultData = (result) => {
   const resultData = {
     globalScore: result.total_score || 0,
+    totalScore: result.scoring_snapshot?.total || null,
     categoryScores: {},
     subcategoryScores: {},
     categoryLevels: {}
@@ -107,7 +103,6 @@ const calculateResultData = (result) => {
       resultData.subcategoryScores[categoryName][sectionName] = rs.score || 0;
     });
   }
-  console.log('Calculated result data: 2222222222222222222222', resultData);
   return resultData;
 };
 
@@ -149,14 +144,12 @@ const sendResultNotification = async (result) => {
       const hasSections = completeResult?.result_sections?.length > 0;
 
       if (hasCategories && hasSections) {
-        console.log(`✓ Result data loaded successfully after ${attempts + 1} attempt(s)`);
         break;
       }
 
       attempts++;
       
       if (attempts < maxRetries) {
-        console.log(`⏳ Waiting for result data... Attempt ${attempts}/${maxRetries}`);
         // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
@@ -167,7 +160,6 @@ const sendResultNotification = async (result) => {
       throw new Error(`Timeout: Result categories and sections not found after ${maxRetries} seconds`);
     }
     
-    console.log('Complete result fetched: 33333333333333333333', JSON.stringify(completeResult, null, 2));
     
     if (!completeResult) {
       throw new Error('Result not found');

@@ -4,9 +4,10 @@ const ResultInlineSerializer = createInlineSerializer('result', {
   attributes: [
     'user_id', 
     'total_score', 
+    'global_level',
+    'core_score',
     'global_feedback', 
     'current_rank', 
-    'assessment_details',
     'created_at', 
     'updated_at', 
     'deleted_at'
@@ -14,11 +15,11 @@ const ResultInlineSerializer = createInlineSerializer('result', {
   relationships: {
     result_categories: {
       type: 'result_category',
-      attributes: ['result_id', 'category_id', 'score', 'level', 'created_at', 'updated_at']
+      attributes: ['result_id', 'category_id', 'score', 'created_at', 'updated_at']
     },
     result_sections: {
       type: 'result_section', 
-      attributes: ['result_id', 'section_id', 'score', 'level', 'created_at', 'updated_at']
+      attributes: ['result_id', 'section_id', 'score', 'created_at', 'updated_at']
     }
   }
 });

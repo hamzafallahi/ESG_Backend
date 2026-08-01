@@ -7,11 +7,14 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'category_id',
         as: 'category'
       });
+      Section.hasMany(models.subsector_weight, {
+        foreignKey: 'section_id',
+        as: 'subsector_weights',
+        onDelete: 'CASCADE'
+      });
       Section.hasMany(models.question, {
         foreignKey: 'section_id',
         as: 'questions',
-        // Default ordering by level descending
-        order: [['level', 'DESC']],
         onDelete: 'CASCADE'
       });
       Section.hasMany(models.result_sections, {
@@ -46,6 +49,11 @@ module.exports = (sequelize, DataTypes) => {
     description: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    core: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     }
   }, {
     sequelize,

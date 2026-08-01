@@ -3,7 +3,8 @@ const { createInlineSerializer } = require('../utils/inlineSerializer');
 const AssessmentProgressInlineSerializer = createInlineSerializer('assessment_progress', {
   attributes: [
     'user_id',
-    'answers',
+    'status',
+    'result_id',
     'current_page',
     'ui_state',
     'total_questions',

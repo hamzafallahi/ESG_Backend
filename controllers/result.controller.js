@@ -2,6 +2,7 @@ const db = require('../models');
 const Result = db.results;
 const ResultCategory = db.result_categories;
 const ResultSection = db.result_sections;
+const AssessmentProgress = db.assessment_progress;
 const Category = db.category;
 const Section = db.section;
 const User = db.user;
@@ -11,7 +12,12 @@ const { createCrudOperations } = require( "../utils/crudOperations.js");
 const NotFoundError = require( "../error/exception/NotFound.js");
 const BusinessError = require("../error/BusinessError");
 const resultService = require('../services/resultService');
-const { calculateAllLevels } = require('../services/levelCalculationService');
+const { calculateAllScoresAndLevels } = require('../services/levelCalculationService');
+const {
+  composeAnswers,
+  syncAnswers,
+  computeMetrics,
+} = require('../helper/progressAnswersHelper.js');
 
 const allowedFields = [
   "id",
@@ -19,7 +25,6 @@ const allowedFields = [
   "total_score",
   "global_feedback",
   "current_rank",
-  "assessment_details",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -35,9 +40,37 @@ const crudOps = createCrudOperations({
   defaultIncludes: ["result_categories", "result_sections"],
 });
 
+
+
 // Custom getAll with pagination
 const getAll = async (req, res, next) => {
   try {
+    const userId = req.userId;
+
+    if (req.userRole === 'user') {
+      req.query.filter = req.query.filter || {};
+      const filterUserId = req.query.filter.user_id;
+
+      const passedIds =
+        filterUserId === undefined || filterUserId === null
+          ? []
+          : String(filterUserId)
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+      if (passedIds.length > 0 && passedIds.some((id) => id !== userId)) {
+        const businessError = new BusinessError(403, 'FORBIDDEN', 'Forbidden');
+        businessError.addError(
+          'filter.user_id',
+          'You can only view your own results'
+        );
+        throw businessError;
+      }
+
+      req.query.filter.user_id = userId;
+    }
+
     await crudOps.getAllWithPagination(req, res, next);
   } catch (error) {
     next(error);
@@ -46,6 +79,25 @@ const getAll = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
+    /*    const userId = req.userId;
+
+        if (req.userRole === 'user') {
+          const { id } = req.params;
+          const result = await Result.findByPk(id, {
+            attributes: ['id', 'user_id'],
+          });
+
+          if (!result) {
+            throw new NotFoundError('Result not found', 'Result');
+          }
+
+          if (result.user_id !== userId) {
+            const businessError = new BusinessError(403, 'FORBIDDEN', 'Forbidden');
+            businessError.addError('id', 'You can only view your own results');
+            throw businessError;
+          }
+        }*/
+
     await crudOps.getById(req, res, next);
   } catch (error) {
     next(error);
@@ -54,54 +106,97 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const userId = req.body.user_id;
-    
+    const userId = req.userId;
+
     // Validate user exists and check next_allowed_assessment_date
     const user = await User.findByPk(userId);
-    
+
     if (!user) {
       throw new NotFoundError("User not found", "User");
     }
-    
+
     // Check if user is allowed to submit a result
     if (user.next_allowed_assessment_date !== null) {
       const currentDate = new Date();
       const nextAllowedDate = new Date(user.next_allowed_assessment_date);
-      
+
       if (currentDate < nextAllowedDate) {
         const businessError = new BusinessError(403, "Forbidden");
         businessError.addError(
-          'attributes.user_id', 
+          'attributes.user_id',
           `You are not allowed to submit a result until ${nextAllowedDate.toISOString()}`
         );
         throw businessError;
       }
     }
-    
-    // Extract submission data from the request body
-    const categoryScores = req.body.category_scores || {};
-    const subcategoryScores = req.body.subcategory_scores || {};
-    const answers = req.body.answers || {};
 
-    // Create the main result record
-    const newResult = await Result.create({
-      user_id: req.body.user_id,
-      total_score: req.body.total_score,
-      global_feedback: req.body.global_feedback,
-      current_rank: req.body.current_rank,
+    // answers format: { questionId: { type: 'YES'|'NN'|'NA'|'NAC', nac_percentage?: number, justification?: {...} } }
+    let answers = req.body.answers || {};
+
+    // The user's current DRAFT progress (created lazily if missing) — it is
+    // the canonical source of in-progress answers and will be linked to the
+    // result on submission (status -> SUBMITTED, result_id set by the hook).
+    let progress = await AssessmentProgress.findOne({
+      where: { user_id: userId, status: 'DRAFT' },
     });
 
-    // Build question scores map from flat answers
-    // Answers are now keyed by question UUID directly from the frontend
-    const questionScores = answers;
+    if (Object.keys(answers).length === 0 && progress) {
+      answers = await composeAnswers(progress.id);
+    }
+    const globalFeedback = req.body.global_feedback || null;
 
-    // Calculate levels for all sections and categories on the backend
-    const { categoryLevels, sectionLevels } = await calculateAllLevels(subcategoryScores, questionScores);
+    // Calculate all scores (percentages) and the global maturity level
+    // server-side, weighted by the company's sub-sector.
+    const {
+      globalScore,
+      globalLevel,
+      coreScore,
+      categoryScores,
+      subcategoryScores,
+      unansweredCount,
+      scoringSnapshot,
+    } = await calculateAllScoresAndLevels(answers, user.sub_sector);
 
-    console.log('📊 Computed category levels:', categoryLevels);
-    console.log('📊 Computed section levels:', sectionLevels);
+    // All questions must be answered before submission
+    if (unansweredCount > 0) {
+      const businessError = new BusinessError(400, "Bad Request");
+      businessError.addError(
+        'attributes.answers',
+        `${unansweredCount} question(s) have not been answered. All questions must be answered before submission.`
+      );
+      throw businessError;
+    }
 
-    // Fetch category and section mappings
+    // Make sure the DRAFT progress reflects exactly the submitted answers so
+    // the normalized rows linked to this result are accurate.
+    if (!progress) {
+      progress = await AssessmentProgress.create({
+        user_id: userId,
+        status: 'DRAFT',
+      });
+    }
+
+    const answeredCount = await syncAnswers(progress, answers);
+    const totalQuestions = progress.total_questions > 0 ? progress.total_questions : answeredCount;
+    await progress.update({
+      total_questions: totalQuestions,
+      ...computeMetrics(answeredCount, totalQuestions),
+      started_at: progress.started_at || new Date(),
+    });
+
+    // Create the main result record (afterCreate hook marks the progress
+    // SUBMITTED and sets its result_id)
+    const newResult = await Result.create({
+      user_id: userId,
+      total_score: globalScore,
+      global_level: globalLevel,
+      core_score: coreScore,
+      global_feedback: globalFeedback,
+      current_rank: null,
+      scoring_snapshot: scoringSnapshot,
+    });
+
+    // Fetch category and section mappings for creating sub-records
     const [allCategories, allSections] = await Promise.all([
       Category.findAll({ attributes: ['id', 'name', 'name_fr'] }),
       Section.findAll({ attributes: ['id', 'title', 'title_fr'] }),
@@ -119,42 +214,35 @@ const create = async (req, res, next) => {
       if (sec.title_fr) sectionTitleToId[sec.title_fr] = sec.id;
     });
 
-    // Create result-category records with computed levels
-    const categoryPromises = Object.entries(categoryScores).map(([categoryName, score]) => {
-      const categoryId = categoryNameToId[categoryName];
-      if (!categoryId) {
-        console.warn(`[WARNING] Category not found in database: "${categoryName}"`);
-        return null;
-      }
-      const level = categoryLevels[categoryName] || 0;
-
-      return ResultCategory.create({
-        result_id: newResult.id,
-        category_id: categoryId,
-        score: score,
-        level: level,
+    // Create result-category records — only English category names to avoid duplicates
+    const seenCategoryIds = new Set();
+    const categoryPromises = Object.entries(categoryScores)
+      .map(([categoryName, score]) => {
+        const categoryId = categoryNameToId[categoryName];
+        if (!categoryId || seenCategoryIds.has(categoryId)) return null;
+        seenCategoryIds.add(categoryId);
+        return ResultCategory.create({
+          result_id: newResult.id,
+          category_id: categoryId,
+          score,
+        });
       });
-    });
 
     await Promise.all(categoryPromises.filter(Boolean));
 
-    // Create result-section records with computed levels
+    // Create result-section records — deduplicate by section id
+    const seenSectionIds = new Set();
     const sectionPromises = [];
-    Object.entries(subcategoryScores).forEach(([categoryName, subcategories]) => {
+    Object.entries(subcategoryScores).forEach(([, subcategories]) => {
       Object.entries(subcategories).forEach(([sectionName, score]) => {
         const sectionId = sectionTitleToId[sectionName];
-        if (!sectionId) {
-          console.warn(`[WARNING] Section not found in database: "${sectionName}"`);
-          return;
-        }
-        const level = (sectionLevels[categoryName] && sectionLevels[categoryName][sectionName]) || 0;
-
+        if (!sectionId || seenSectionIds.has(sectionId)) return;
+        seenSectionIds.add(sectionId);
         sectionPromises.push(
           ResultSection.create({
             result_id: newResult.id,
             section_id: sectionId,
-            score: score,
-            level: level,
+            score,
           })
         );
       });
@@ -162,8 +250,8 @@ const create = async (req, res, next) => {
 
     await Promise.all(sectionPromises);
 
-    let serializedData = ResultSerializer.serialize(newResult);
-    
+    const serializedData = ResultSerializer.serialize(newResult);
+
     // Send email and save to Google Sheets asynchronously (non-blocking)
     resultService.sendResultNotification(newResult)
       .then(result => {
@@ -172,7 +260,7 @@ const create = async (req, res, next) => {
       .catch(error => {
         console.error('Error sending result notification:', error);
       });
-    
+
     res.status(201).json(serializedData);
   } catch (error) {
     next(error);
@@ -218,16 +306,41 @@ const getAssessmentDetails = async (req, res, next) => {
     const { id } = req.params;
     
     const result = await Result.findByPk(id, {
-      attributes: ['id', 'user_id', 'assessment_details', 'created_at']
+      attributes: ['id', 'user_id', 'created_at'],
+      include: [
+        {
+          model: AssessmentProgress,
+          as: 'assessment_progress',
+          required: false,
+          attributes: [
+            'id',
+            'user_id',
+            'current_page',
+            'ui_state',
+            'total_questions',
+            'answered_questions',
+            'completion_percentage',
+            'started_at',
+            'updated_at'
+          ]
+        }
+      ]
     });
 
     if (!result) {
       throw new NotFoundError("Result not found", "Result");
     }
 
-    // Serialize similar to AssessmentProgress serializer format
-    const assessmentDetails = result.assessment_details || {};
-    
+    const progress = result.assessment_progress || null;
+
+    // Answers come from the normalized rows of the submitted progress linked
+    // to this result.
+    let answers = {};
+
+    if (progress) {
+      answers = await composeAnswers(progress.id);
+    }
+
     const serializedData = {
       data: {
         type: 'assessment_details',
@@ -235,13 +348,16 @@ const getAssessmentDetails = async (req, res, next) => {
         attributes: {
           result_id: result.id,
           user_id: result.user_id,
-          answers: assessmentDetails.answers || {},
-          current_page: assessmentDetails.current_page || 0,
-          ui_state: assessmentDetails.ui_state || {},
-          total_questions: assessmentDetails.total_questions || 0,
-          answered_questions: assessmentDetails.answered_questions || 0,
-          completion_percentage: assessmentDetails.completion_percentage || 0,
-          saved_at: assessmentDetails.saved_at || null,
+          answers,
+          current_page: progress ? progress.current_page : 0,
+          ui_state: progress ? progress.ui_state : {},
+          total_questions: progress ? progress.total_questions : 0,
+          answered_questions: progress ? progress.answered_questions : 0,
+          completion_percentage: progress
+            ? parseFloat(progress.completion_percentage)
+            : 0,
+          started_at: progress ? progress.started_at : null,
+          saved_at: progress ? progress.updated_at : null,
           result_created_at: result.created_at
         }
       }

@@ -6,7 +6,6 @@ const ALLOWED_FIELDS = [
   "total_score",
   "global_feedback",
   "current_rank",
-  "assessment_details",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -14,32 +13,42 @@ const ALLOWED_FIELDS = [
 
 const ALLOWED_SORT_FIELDS = ["id", "user_id", "total_score", "current_rank", "created_at", "updated_at"];
 
+const attachmentSchema = Joi.object({
+  url: Joi.string().uri().required(),
+  public_id: Joi.string().required(),
+  original_name: Joi.string().max(255).required(),
+  size: Joi.number().integer().min(0).required(),
+  mime_type: Joi.string().max(100).required(),
+});
+
+const justificationSchema = Joi.object({
+  proof_type: Joi.string().max(100).allow(null, ''),
+  description: Joi.string().min(10).max(500).allow(null, ''),
+  document_date: Joi.date().iso().max('now').allow(null),
+  reference_number: Joi.string().max(100).allow(null, ''),
+  evaluator_comment: Joi.string().max(500).allow(null, ''),
+  attachment_urls: Joi.array().items(attachmentSchema).max(3).default([]),
+}).allow(null);
+
+const answerValueSchema = Joi.object({
+  type: Joi.string().valid('YES', 'NN', 'NA', 'NAC').required(),
+  nac_percentage: Joi.number().min(1).max(100).when('type', {
+    is: 'NAC',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  justification: justificationSchema,
+});
+
 const resultDataSchema = {
   type: Joi.string().valid("Result").required(),
   attributes: Joi.object()
     .keys({
-      user_id: Joi.string().uuid().required(),
-      total_score: Joi.number().integer().allow(null),
-      global_feedback: Joi.string().allow(null),
-      current_rank: Joi.number().integer().allow(null),
-      assessment_details: Joi.object().keys({
-        user_id: Joi.string().uuid(),
-        answers: Joi.object(),
-        current_page: Joi.number().integer().min(0),
-        ui_state: Joi.object(),
-        total_questions: Joi.number().integer().min(0),
-        answered_questions: Joi.number().integer().min(0),
-        completion_percentage: Joi.number().min(0).max(100),
-        started_at: Joi.date().iso().allow(null),
-        saved_at: Joi.date().iso()
-      }).allow(null),
-      // Submission data for level calculation (processed by backend, not persisted on Result)
-      category_scores: Joi.object().pattern(Joi.string(), Joi.number()).allow(null),
-      subcategory_scores: Joi.object().pattern(
-        Joi.string(),
-        Joi.object().pattern(Joi.string(), Joi.number())
-      ).allow(null),
-      answers: Joi.object().pattern(Joi.string(), Joi.number()).allow(null),
+      global_feedback: Joi.string().allow(null, ''),
+      // All scores are computed server-side; only answers are required from the client
+      answers: Joi.object()
+        .pattern(Joi.string().uuid(), answerValueSchema)
+        .required(),
     })
     .required(),
 };
@@ -52,17 +61,6 @@ const resultUpdateDataSchema = {
       total_score: Joi.number().integer().allow(null),
       global_feedback: Joi.string().allow(null),
       current_rank: Joi.number().integer().allow(null),
-      assessment_details: Joi.object().keys({
-        user_id: Joi.string().uuid(),
-        answers: Joi.object(),
-        current_page: Joi.number().integer().min(0),
-        ui_state: Joi.object(),
-        total_questions: Joi.number().integer().min(0),
-        answered_questions: Joi.number().integer().min(0),
-        completion_percentage: Joi.number().min(0).max(100),
-        started_at: Joi.date().iso().allow(null),
-        saved_at: Joi.date().iso()
-      }).allow(null)
     }),
 };
 

@@ -196,7 +196,6 @@ module.exports = {
       }
     ];
 
-    // Insert the sections into the database
     await queryInterface.bulkInsert('sections', sections);
   },
 
