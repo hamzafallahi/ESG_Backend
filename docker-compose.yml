@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: umami
       POSTGRES_USER: umami
-      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:-umami_secure_password_change_me}
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:-Q7mV2xL9pR4tN8cH3zD6kS1f}
     volumes:
       - umami-db-data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
     ports:
       - "3100:3000"  # Umami dashboard accessible at localhost:3100
     environment:
-      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD:-umami_secure_password_change_me}@umami-db:5432/umami
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD:-Q7mV2xL9pR4tN8cH3zD6kS1f}@umami-db:5432/umami
       DATABASE_TYPE: postgresql
       APP_SECRET: ${UMAMI_APP_SECRET:-replace_this_with_random_string_min_32_chars}
       # Optional: disable telemetry
@@ -69,11 +69,26 @@ services:
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Q7mV2xL9pR4tN8cH3zD6kS1f}
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
       - ./init-db-local.sql:/docker-entrypoint-initdb.d/init.sql  
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
     networks:
       - postgres
     restart: unless-stopped
@@ -85,5 +100,6 @@ networks:
 
 volumes:
   postgres:
+  pgadmin:
   umami-db-data:
     driver: local
