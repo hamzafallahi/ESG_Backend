@@ -3,6 +3,28 @@ const config = require('../config/app-config');
 const db = require('../models');
 const { getWeightConfig } = require('../services/weightConfigService');
 
+const tryVerifyWithLocalKey = (token) => {
+  const key = config.JWT_PUBLIC_KEY || config.JWT_SECRET;
+  if (!key) return null;
+
+  try {
+    return jwt.verify(token, key, { algorithms: ['RS256'] });
+  } catch (error) {
+    return null;
+  }
+};
+
+const tryVerifyWithEventizerKey = (token) => {
+  const key = config.EVENTIZER_PUBLIC_KEY;
+  if (!key) return null;
+
+  try {
+    return jwt.verify(token, key, { algorithms: ['RS256'] });
+  } catch (error) {
+    return null;
+  }
+};
+
 /**
  * Helper: extract token from cookie (supports req.cookies or raw Cookie header)
  */
@@ -31,6 +53,23 @@ const parts = cookieHeader.split(';').map(c => c.trim());
   return pickToken(parsed);
 };
 
+const verifyAndDecodeToken = (token, req, isAdminRoute) => {
+  if (isAdminRoute) {
+    const decodedLocal = tryVerifyWithLocalKey(token);
+    if (decodedLocal) return decodedLocal;
+    throw new Error('Invalid admin token');
+  }
+
+  const decodedEventizer = tryVerifyWithEventizerKey(token);
+  if (decodedEventizer) return decodedEventizer;
+
+  // Backward compatibility: allow local user token while migrating.
+  const decodedLocal = tryVerifyWithLocalKey(token);
+  if (decodedLocal) return decodedLocal;
+
+  throw new Error('Invalid user token');
+};
+
 /**
  * Middleware to verify JWT token and attach user information to request
  * Token is expected in the 'token' cookie only.
@@ -53,9 +92,6 @@ const authenticate = async (req, res, next) => {
       (normalizedUrl.includes('/auth/me') && !normalizedUrl.includes('/auth/admin')) ||
       normalizedUrl.includes('/profile') ||
       (isRankingRoute && !isRankingAdminAction) ||
-      // User inbox routes should resolve against the user token first.
-      // Otherwise, when both cookies exist, admin_token may be selected and
-      // downstream user lookups fail with "User not found".
       (isInboxActionsRoute && !isInboxAdminAction) ||
       isAssessmentProgressMeRoute ||
       isResultSubmissionRoute;
@@ -83,14 +119,11 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const decoded = verifyAndDecodeToken(token, req, isAdminPreferredRoute || (!isUserPreferredRoute && !isAdminPreferredRoute && normalizedUrl.includes('/admin')));
     
-    // Add user info to request
     req.userId = decoded.id;
-    req.userRole = decoded.role; // 'user', 'admin', or 'super_admin'
+    req.userRole = decoded.role;
 
-    // Fetch total score based on user's sub-sector
     if (decoded.role === 'user') {
       const user = await db.user.findByPk(decoded.id, { attributes: ['sub_sector'] });
       if (user && user.sub_sector) {
@@ -171,11 +204,10 @@ const optionalAuthenticate = async (req, res, next) => {
       return next();
     }
 
-    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const decoded = verifyAndDecodeToken(token, req, false);
     req.userId = decoded.id;
     req.userRole = decoded.role;
 
-    // Fetch total score based on user's sub-sector
     if (decoded.role === 'user') {
       const user = await db.user.findByPk(decoded.id, { attributes: ['sub_sector'] });
       if (user && user.sub_sector) {
@@ -197,13 +229,9 @@ const optionalAuthenticate = async (req, res, next) => {
  */
 const authenticateSSE = async (req, res, next) => {
   try {
-    // For SSE, choose token preference by endpoint.
-    // /events/admin should prefer admin token, /events should prefer user token.
     const url = (req.originalUrl || '').toLowerCase();
     const prefersAdmin = url.includes('/events/admin');
     const token = getTokenFromCookie(req, prefersAdmin ? 'admin' : 'user');
-
-   
 
     if (!token) {
       return res.status(401).json({ 
@@ -215,14 +243,10 @@ const authenticateSSE = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    
-    // Add user info to request
+    const decoded = verifyAndDecodeToken(token, req, prefersAdmin);
     req.userId = decoded.id;
-    req.userRole = decoded.role; // 'user', 'admin', or 'super_admin'
+    req.userRole = decoded.role;
 
-    // Fetch total score based on user's sub-sector
     if (decoded.role === 'user') {
       const user = await db.user.findByPk(decoded.id, { attributes: ['sub_sector'] });
       if (user && user.sub_sector) {

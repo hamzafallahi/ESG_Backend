@@ -151,13 +151,22 @@ module.exports = (sequelize, DataTypes) => {
         }
       }
     },
+    organisation_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+      field: 'organisation_id'
+    },
+    adherent_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+      field: 'adherent_id'
+    },
     password: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       validate: {
-        notEmpty: {
-          msg: 'Password cannot be empty'
-        },
         len: {
           args: [6, 100],
           msg: 'Password must be at least 6 characters long'

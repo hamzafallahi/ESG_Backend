@@ -22,9 +22,19 @@ module.exports = {
         allowNull: false,
         unique: true
       },
+      organisation_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true
+      },
+      adherent_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true
+      },
       password: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: true
       },
       created_at: {
         allowNull: false,

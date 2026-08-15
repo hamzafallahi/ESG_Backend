@@ -81,7 +81,16 @@ const signupSchema = {
       logo_url: Joi.string().max(2048),
       video_url: Joi.string().max(2048),
       email: Joi.string().email().required(),
-      password: Joi.string().min(6).max(100).required(),
+      password: Joi.string().min(6).max(100).allow(null, '').optional(),
+    })
+    .required(),
+};
+
+const forgotPasswordSchema = {
+  type: Joi.string().valid("users").required(),
+  attributes: Joi.object()
+    .keys({
+      email: Joi.string().email().required(),
     })
     .required(),
 };
@@ -105,6 +114,12 @@ const createRules = {
 const loginRules = {
   body: Joi.object({
     data: Joi.object(loginSchema).required(),
+  }),
+};
+
+const forgotPasswordRules = {
+  body: Joi.object({
+    data: Joi.object(forgotPasswordSchema).required(),
   }),
 };
 
@@ -146,6 +161,7 @@ const showRules = {
 module.exports = {
   createRules,
   loginRules,
+  forgotPasswordRules,
   indexRules,
   showRules,
   ALLOWED_FIELDS,

@@ -1,4 +1,18 @@
 
+const fs = require('fs');
+const path = require('path');
+
+const readPem = (value, fallbackRelativePath) => {
+    if (!value) {
+        const fallbackPath = fallbackRelativePath ? path.join(__dirname, fallbackRelativePath) : null;
+        if (fallbackPath && fs.existsSync(fallbackPath)) {
+            return fs.readFileSync(fallbackPath, 'utf8');
+        }
+        return undefined;
+    }
+    return value.replace(/\\n/g, '\n');
+};
+
 const defaultConfig = {
   
     db: {
@@ -16,6 +30,10 @@ const defaultConfig = {
         }
     },
     JWT_SECRET: process.env.JWT_SECRET,
+    JWT_PRIVATE_KEY: readPem(process.env.JWT_PRIVATE_KEY || process.env.LOCAL_JWT_PRIVATE_KEY, '../env/dev.private_key.pem'),
+    JWT_PUBLIC_KEY: readPem(process.env.JWT_PUBLIC_KEY || process.env.LOCAL_JWT_PUBLIC_KEY, '../env/dev.public_key.pem'),
+    EVENTIZER_PUBLIC_KEY: readPem(process.env.EVENTIZER_PUBLIC_KEY || process.env.EVENTIZER_JWT_PUBLIC_KEY, '../env/eventizer.public_key.pem'),
+    EVENTIZER_BASE_URL: process.env.EVENTIZER_BASE_URL || 'https://api.sourcebook-taa.tn',
     JWT_EXPIRATION: process.env.JWT_EXPIRATION,
     port: process.env.SERVICE_PORT,
     limit: 10,
