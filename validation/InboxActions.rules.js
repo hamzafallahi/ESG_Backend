@@ -18,7 +18,8 @@ const contactUs = {
       subject: Joi.string().max(255).required(),
       organization_name: Joi.string().max(255).allow(null, '').optional(),
       email: Joi.string().email().allow(null, '').optional(),
-      message: Joi.string().max(5000).required()
+      message: Joi.string().max(5000).required(),
+      recaptcha_token: Joi.string().required()
     })
     .options({ abortEarly: false }),
 };

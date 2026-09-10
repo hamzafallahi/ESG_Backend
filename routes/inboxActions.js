@@ -4,6 +4,7 @@ const inboxActionsController = require('../controllers/InboxActions.controller')
 const { retakeRequest, contactUs, bugReport, supportRequest, retakeResponse } = require('../validation/InboxActions.rules.js');
 const validate = require('../middleware/validationMiddleware');
 const { authenticate, requireAdmin, requireUser, optionalAuthenticate } = require('../middleware/authMiddleware');
+const { verifyRecaptcha } = require('../middleware/recaptchaMiddleware');
 
 // ============================================
 // USER ENDPOINTS (Authenticated users)
@@ -27,7 +28,7 @@ router.post('/support-request', authenticate, requireUser, validate(supportReque
 
 // Anyone submits a contact us message (visitor or authenticated user)
 // POST /inbox-actions/contact-us
-router.post('/contact-us', optionalAuthenticate, validate(contactUs), inboxActionsController.submitContactUs);
+router.post('/contact-us', optionalAuthenticate, validate(contactUs), verifyRecaptcha, inboxActionsController.submitContactUs);
 
 // ============================================
 // ADMIN ENDPOINTS (Admin/SuperAdmin only)

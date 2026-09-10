@@ -17,6 +17,7 @@ const defaultConfig = {
     },
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRATION: process.env.JWT_EXPIRATION,
+    recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY,
     port: process.env.SERVICE_PORT,
     limit: 10,
     offset: 0,
